@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none">
+  <!-- 배경 원 -->
+  <circle cx="256" cy="256" r="236" fill="#2563eb" /> <!-- Tailwind bg-blue-600 -->
+  <!-- 십자가 기둥 -->
+  <rect x="232" y="136" width="48" height="240" rx="16" fill="#ffffff" />
+  <rect x="136" y="232" width="240" height="48" rx="16" fill="#ffffff" />
+</svg>

@@ -1,0 +1,16 @@
+{
+  "name": "Progress Note",
+  "short_name": "Progress Note",
+  "description": "물리치료사 전용 프로그레스 노트 PWA 웹앱",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
