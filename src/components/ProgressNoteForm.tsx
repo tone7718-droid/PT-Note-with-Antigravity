@@ -141,12 +141,12 @@ export default function ProgressNoteForm() {
           <div className="w-full h-full">
             
             {/* 타이틀 & 버튼 */}
-            <div className="relative pb-6 border-b-2 border-gray-200 mb-10 print:border-transparent print:mb-6 print:pb-2">
-              <h1 className="font-extrabold text-center tracking-tight text-3xl sm:text-4xl text-gray-900 print:text-3xl print:text-left print:border-b-4 print:border-gray-800 print:pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b-2 border-gray-200 mb-10 gap-4 print:border-transparent print:mb-6 print:pb-2">
+              <h1 className="font-extrabold text-center sm:text-left tracking-tight text-3xl sm:text-4xl text-gray-900 print:text-3xl print:text-left print:border-b-4 print:border-gray-800 print:pb-4">
                 물리치료 환자 평가지
               </h1>
               
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2 hidden sm:flex print:hidden">
+              <div className="flex items-center gap-2 justify-center sm:justify-end hidden sm:flex print:hidden">
                 <button type="button" onClick={() => setShowMacroModal(true)} className="flex items-center gap-2 px-5 py-3 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold rounded-xl shadow-sm hover:shadow-md transition-all" aria-label="매크로 문구 등록">
                   ⚡ 매크로 등록
                 </button>
