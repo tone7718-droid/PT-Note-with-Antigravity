@@ -44,7 +44,6 @@ function PainLabel({ bbox, level }: { bbox: DOMRect; level: number }) {
 
 export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: BodyDiagramProps) {
   const [local, setLocal] = useState<Record<string, number>>({});
-  const [view, setView] = useState<"anterior" | "posterior">("anterior");
   const [hoveredNode, setHoveredNode] = useState<{ name: string; level: number; x: number; y: number } | null>(null);
 
   const ctrl = ext !== undefined && setExt !== undefined;
@@ -187,14 +186,6 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
       <div className="flex flex-col w-full mb-4 gap-3">
         <div className="flex justify-between items-center px-1">
           <p className="text-sm font-bold text-slate-500">📌 부위 클릭 (경도 ➔ 중등도 ➔ 중증 ➔ 취소)</p>
-          <button
-            type="button"
-            onClick={() => setView(v => v === "anterior" ? "posterior" : "anterior")}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors ring-1 ring-slate-200 shadow-sm shrink-0"
-          >
-            <RotateCw size={14} />
-            {view === "anterior" ? "후면 보기" : "전면 보기"}
-          </button>
         </div>
         
         <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
@@ -208,17 +199,17 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
 
       {/* Diagram Container */}
       <div 
-        className="relative w-full max-w-[320px] bg-white rounded-2xl shadow-sm border border-slate-200 p-2 overflow-hidden flex flex-col items-center"
+        className="w-full grid grid-cols-1 md:grid-cols-2 gap-4"
         onPointerOver={handlePointerOver}
         onPointerMove={handlePointerMove}
         onPointerOut={handlePointerOut}
         onClick={handleClick}
       >
-        <h2 className="absolute top-4 left-4 font-bold text-slate-300 tracking-widest uppercase text-xs">
-          {view === "anterior" ? "Anterior" : "Posterior"}
-        </h2>
-
-        {view === "anterior" ? (
+        {/* Anterior View */}
+        <div className="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-2 overflow-hidden flex flex-col items-center">
+          <h2 className="absolute top-4 left-4 font-bold text-slate-300 tracking-widest uppercase text-xs">
+            Anterior
+          </h2>
           <svg viewBox="0 0 500 950" className="w-full h-auto mt-4 drop-shadow-sm select-none" aria-label="전면부 해부도">
             <line x1="250" y1="0" x2="250" y2="950" stroke="#f1f5f9" strokeWidth="2" strokeDasharray="8,8" />
             <text x="50" y="50" className="lr-marker">R (우측)</text>
@@ -281,7 +272,13 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
               {renderPath("polygon", { points: "285,845 320,845 315,920 270,920", "data-name": "좌측 발등" })}
             </g>
           </svg>
-        ) : (
+        </div>
+
+        {/* Posterior View */}
+        <div className="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-2 overflow-hidden flex flex-col items-center">
+          <h2 className="absolute top-4 left-4 font-bold text-slate-300 tracking-widest uppercase text-xs">
+            Posterior
+          </h2>
           <svg viewBox="0 0 500 950" className="w-full h-auto mt-4 drop-shadow-sm select-none" aria-label="후면부 해부도">
             <line x1="250" y1="0" x2="250" y2="950" stroke="#f1f5f9" strokeWidth="2" strokeDasharray="8,8" />
             <text x="50" y="50" className="lr-marker">L (좌측)</text>
@@ -353,7 +350,7 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
               {renderPath("polygon", { points: "265,890 300,890 305,930 260,930", "data-name": "우측 앞발바닥" })}
             </g>
           </svg>
-        )}
+        </div>
       </div>
 
       {/* Summary Chips */}
