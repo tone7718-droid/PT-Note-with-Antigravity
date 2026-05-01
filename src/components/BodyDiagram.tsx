@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, MouseEvent, PointerEvent, useEffect } from "react";
+import React, { useState } from "react";
 import { RotateCw, CheckCircle2, X } from "lucide-react";
 
 export type BodyDiagramProps = {
@@ -62,34 +62,26 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
     const currentLevel = areas[name] || 0;
     const nextLevel = (currentLevel + 1) % 4;
     
-    setAreas((prev) => {
-      const next = { ...prev };
-      // If there's a group (like "rectus"), apply to all components with that group
-      // But we don't have a static list of components by group easily accessible.
-      // We can just update the specific `name`. In this SVG, `data-name="복직근"` is shared by all rectus shapes!
-      // Since they all have the same name, updating the state for "복직근" will automatically update all of them!
-      if (nextLevel === 0) {
-        delete next[name];
-      } else {
-        next[name] = nextLevel;
-      }
-      return next;
-    });
+    const next = { ...areas };
+    if (nextLevel === 0) {
+      delete next[name];
+    } else {
+      next[name] = nextLevel;
+    }
+    setAreas(next);
   };
 
   const removeArea = (name: string) => {
-    setAreas((prev) => {
-      const next = { ...prev };
-      delete next[name];
-      return next;
-    });
+    const next = { ...areas };
+    delete next[name];
+    setAreas(next);
   };
 
   // ----------------------------------------------------------------------
   // Event Handlers
   // ----------------------------------------------------------------------
 
-  const handlePointerOver = (e: PointerEvent<SVGElement>) => {
+  const handlePointerOver = (e: React.PointerEvent) => {
     const target = (e.target as Element).closest("[data-name]");
     if (!target) return;
     const name = target.getAttribute("data-name");
@@ -100,17 +92,17 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
     setHoveredNode({ name, level, x: e.clientX, y: e.clientY });
   };
 
-  const handlePointerMove = (e: PointerEvent<SVGElement>) => {
+  const handlePointerMove = (e: React.PointerEvent) => {
     if (hoveredNode) {
       setHoveredNode((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null);
     }
   };
 
-  const handlePointerOut = (e: PointerEvent<SVGElement>) => {
+  const handlePointerOut = (e: React.PointerEvent) => {
     setHoveredNode(null);
   };
 
-  const handleClick = (e: MouseEvent<SVGElement>) => {
+  const handleClick = (e: React.MouseEvent) => {
     const target = (e.target as Element).closest("[data-name]");
     if (!target) return;
     const name = target.getAttribute("data-name");

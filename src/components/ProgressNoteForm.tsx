@@ -12,12 +12,15 @@ import { ComplaintSection } from "./features/note-form/ComplaintSection";
 import { BodyDiagramSection } from "./features/note-form/BodyDiagramSection";
 import { RomSection } from "./features/note-form/RomSection";
 import { ClinicalSections } from "./features/note-form/ClinicalSections";
+import MacroSettingsModal from "./MacroSettingsModal";
+import { useMacroStore } from "@/store/useMacroStore";
 
 export default function ProgressNoteForm() {
   const selectedNoteId = useNoteStore((s) => s.selectedNoteId);
   const notes = useNoteStore((s) => s.notes);
   const saveNote = useNoteStore((s) => s.saveNote);
   const therapist = useAuthStore((s) => s.therapist);
+  const loadMacros = useMacroStore((s) => s.loadMacros);
 
   const methods = useForm<NoteData>({
     defaultValues: EMPTY_NOTE,
@@ -31,10 +34,44 @@ export default function ProgressNoteForm() {
   const [savedTherapist, setSavedTherapist] = useState<Therapist | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [lastAutoSaved, setLastAutoSaved] = useState<Date | null>(null);
+  const [showMacroModal, setShowMacroModal] = useState(false);
 
-  // 현재 값 구독 (하단 서명 및 토스트용)
-  const patientName = watch("patientName");
-  const noteDate = watch("noteDate");
+  // 매크로 스토어 초기화
+  useEffect(() => {
+    loadMacros();
+  }, [loadMacros]);
+
+  // 현재 값 구독 (하단 서명 및 토스트, 자동 저장용)
+  const formData = watch();
+  const patientName = formData.patientName;
+  const noteDate = formData.noteDate;
+
+  // 자동 임시 저장 (Auto-save: 5초 디바운스)
+  useEffect(() => {
+    if (!formData.patientName || !formData.diagnosis) return; // 필수 항목이 없으면 자동 저장 안 함
+
+    const timer = setTimeout(() => {
+      const effectiveNoteDate = formData.noteDate || new Date().toISOString().split("T")[0];
+      const dataToSave = { ...formData, noteDate: effectiveNoteDate };
+      dataToSave.rom = dataToSave.rom?.filter(r => r.joint.trim() !== "") || [];
+      
+      const payload = {
+        ...dataToSave,
+        therapist: therapist || savedTherapist,
+        therapistUid: therapist?.uid || savedTherapist?.uid || "",
+      };
+
+      saveNote(payload, currentNoteId).then((saved) => {
+        if (!currentNoteId && saved.id) {
+          setCurrentNoteId(saved.id);
+        }
+        setLastAutoSaved(new Date());
+      }).catch(console.error);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [formData, therapist, savedTherapist, currentNoteId, saveNote]);
 
   // selectedNoteId 변경 시 폼 데이터 로드 또는 리셋
   useEffect(() => {
@@ -110,6 +147,9 @@ export default function ProgressNoteForm() {
               </h1>
               
               <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2 hidden sm:flex print:hidden">
+                <button type="button" onClick={() => setShowMacroModal(true)} className="flex items-center gap-2 px-5 py-3 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold rounded-xl shadow-sm hover:shadow-md transition-all" aria-label="매크로 문구 등록">
+                  ⚡ 매크로 등록
+                </button>
                 <button type="button" onClick={handlePrint} className="flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl shadow-md hover:shadow-xl transition-all" aria-label="기록 인쇄 및 PDF 저장">
                   🖨️ 인쇄 / PDF 저장
                 </button>
@@ -124,6 +164,11 @@ export default function ProgressNoteForm() {
               ) : (
                 <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-50 text-green-800 border border-green-200 rounded-full shadow-sm ml-auto">
                   ✨ 새 노트 작성
+                </span>
+              )}
+              {lastAutoSaved && (
+                <span className="ml-4 text-xs text-gray-400">
+                  마지막 임시 저장: {lastAutoSaved.toLocaleTimeString()}
                 </span>
               )}
             </div>
@@ -168,7 +213,10 @@ export default function ProgressNoteForm() {
         </div>
 
         {/* ── 고정 저장 & 모바일 PDF 버튼 ── */}
-        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-8 sm:right-8 z-50 flex items-center justify-end gap-3 print:hidden">
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-8 sm:right-8 z-50 flex items-center justify-end gap-2 print:hidden">
+          <button type="button" onClick={() => setShowMacroModal(true)} className="sm:hidden flex items-center justify-center px-4 py-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-bold text-base rounded-2xl shadow-lg transition-all focus:outline-none focus:ring-4 focus:ring-amber-300">
+            ⚡
+          </button>
           <button type="button" onClick={handlePrint} className="flex-1 sm:hidden flex items-center justify-center gap-2 px-5 py-4 bg-gray-800 hover:bg-gray-900 active:bg-black text-white font-bold text-lg rounded-2xl shadow-lg transition-all focus:outline-none focus:ring-4 focus:ring-gray-300">
             📄 PDF
           </button>
@@ -200,6 +248,11 @@ export default function ProgressNoteForm() {
           노트가 성공적으로 저장되었습니다.
         </div>
       </form>
+
+      {/* 매크로 설정 모달 */}
+      {showMacroModal && (
+        <MacroSettingsModal onClose={() => setShowMacroModal(false)} />
+      )}
     </FormProvider>
   );
 }

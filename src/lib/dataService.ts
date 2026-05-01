@@ -57,7 +57,7 @@ export async function signOut(): Promise<void> {
 }
 
 export function onAuthStateChange(callback: (therapist: Therapist | null) => void) {
-  return supabase.auth.onAuthStateChange(async (event, session) => {
+  return supabase.auth.onAuthStateChange(async (event: string, session: any) => {
     if (event === "SIGNED_OUT" || !session?.user) {
       setCachedAccessToken(null);
       callback(null);

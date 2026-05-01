@@ -61,7 +61,7 @@ export function PatientInfoSection({ isGeneratingPdf }: { isGeneratingPdf: boole
           </div>
         </div>
 
-        <div className="col-span-2">
+        <div className="col-span-1 md:col-span-2">
           <label className={`block font-bold mb-2 ${isGeneratingPdf ? 'text-sm text-black mb-1' : 'text-base text-gray-700 print:text-sm'}`}>
             진단명 <span className="text-red-500">*</span>
           </label>
@@ -72,7 +72,7 @@ export function PatientInfoSection({ isGeneratingPdf }: { isGeneratingPdf: boole
             {...register("diagnosis", { required: "진단명을 입력해주세요" })} 
           />
         </div>
-        <div className="col-span-2">
+        <div className="col-span-1 md:col-span-2">
           <label className={`block font-bold mb-2 ${isGeneratingPdf ? 'text-sm text-black mb-1' : 'text-base text-gray-700 print:text-sm'}`}>과거력 (PMH)</label>
           <Input isPdfMode={isGeneratingPdf} placeholder="고혈압, 당뇨 등 기재" {...register("pmh")} />
         </div>

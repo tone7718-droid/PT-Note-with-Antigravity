@@ -63,7 +63,7 @@ export const NoteDataSchema = z.object({
   diagnosis: z.string().min(1, "진단명을 입력해주세요."),
   pmh: z.string(),
   painScore: z.number().nullable(),
-  painAreas: z.record(z.number()),
+  painAreas: z.record(z.string(), z.number()),
   chiefComplaint: z.string(),
   rom: z.array(
     z.object({

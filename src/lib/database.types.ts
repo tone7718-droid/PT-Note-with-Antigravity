@@ -80,8 +80,8 @@ export function dbNoteToNoteData(row: DbNoteRow): NoteData {
 
 export function noteDataToDbInsert(note: NoteData): DbNoteInsert {
   return {
-    id: note.id,
-    saved_at: note.savedAt,
+    id: note.id || "",
+    saved_at: note.savedAt || new Date().toISOString(),
     patient_name: note.patientName,
     chart_no: note.chartNo,
     birth_date: note.birthDate,

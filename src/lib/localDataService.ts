@@ -124,7 +124,7 @@ export async function reauthenticate(
 
 export async function fetchNotes(): Promise<NoteData[]> {
   return read<NoteData[]>(NOTES_KEY, []).sort(
-    (a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime()
+    (a, b) => new Date(b.savedAt || 0).getTime() - new Date(a.savedAt || 0).getTime()
   );
 }
 
@@ -148,7 +148,7 @@ export async function deleteNotes(ids: string[]): Promise<void> {
   const notes = read<NoteData[]>(NOTES_KEY, []);
   write(
     NOTES_KEY,
-    notes.filter((n) => !ids.includes(n.id))
+    notes.filter((n) => !ids.includes(n.id || ""))
   );
 }
 
