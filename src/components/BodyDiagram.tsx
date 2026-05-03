@@ -248,6 +248,133 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
     );
   };
 
+  const renderAnterior = () => (
+    <g data-view="anterior">
+              {renderPath("ellipse", { cx: 250, cy: 70, rx: 40, ry: 55, "data-name": "머리 및 안면" })}
+              {renderPath("circle", { cx: 220, cy: 90, r: 12, "data-name": "우측 턱관절 (TMJ)" })}
+              {renderPath("circle", { cx: 280, cy: 90, r: 12, "data-name": "좌측 턱관절 (TMJ)" })}
+              {renderPath("polygon", { points: "215,105 225,105 245,145 235,145", "data-name": "우측 흉쇄유돌근" })}
+              {renderPath("polygon", { points: "275,105 285,105 265,145 255,145", "data-name": "좌측 흉쇄유돌근" })}
+              {renderPath("rect", { x: 246, y: 150, width: 8, height: 70, rx: 4, "data-name": "흉골" })}
+              {renderPath("polygon", { points: "246,150 180,150 160,220 246,230", "data-name": "우측 대흉근" })}
+              {renderPath("polygon", { points: "254,150 320,150 340,220 254,230", "data-name": "좌측 대흉근" })}
+              {renderPath("polygon", { points: "225,155 185,175 200,205", className: "muscle-deep", "data-name": "우측 소흉근 (심부)" })}
+              {renderPath("polygon", { points: "275,155 315,175 300,205", className: "muscle-deep", "data-name": "좌측 소흉근 (심부)" })}
+              {renderPath("polygon", { points: "180,150 160,160 145,230 160,220", "data-name": "우측 전면 삼각근" })}
+              {renderPath("polygon", { points: "160,160 140,170 130,240 145,230", "data-name": "우측 측면 삼각근" })}
+              {renderPath("polygon", { points: "320,150 340,160 355,230 340,220", "data-name": "좌측 전면 삼각근" })}
+              {renderPath("polygon", { points: "340,160 360,170 370,240 355,230", "data-name": "좌측 측면 삼각근" })}
+              {renderPath("polygon", { points: "130,240 110,330 140,330 160,220", "data-name": "우측 이두근" })}
+              {renderPath("polygon", { points: "370,240 390,330 360,330 340,220", "data-name": "좌측 이두근" })}
+              {renderPath("circle", { cx: 145, cy: 335, r: 10, "data-name": "우측 안쪽 상과" })}
+              {renderPath("circle", { cx: 355, cy: 335, r: 10, "data-name": "좌측 안쪽 상과" })}
+              {renderPath("polygon", { points: "140,340 120,440 140,440 150,340", "data-name": "우측 안쪽 전완" })}
+              {renderPath("polygon", { points: "110,340 90,440 120,440 130,340", "data-name": "우측 가쪽 전완" })}
+              {renderPath("polygon", { points: "360,340 380,440 360,440 350,340", "data-name": "좌측 안쪽 전완" })}
+              {renderPath("polygon", { points: "390,340 410,440 380,440 370,340", "data-name": "좌측 가쪽 전완" })}
+              {renderPath("polygon", { points: "90,450 70,520 110,520 120,450", "data-name": "우측 손" })}
+              {renderPath("polygon", { points: "410,450 430,520 390,520 380,450", "data-name": "좌측 손" })}
+              {renderPath("rect", { x: 215, y: 235, width: 33, height: 35, rx: 5, "data-name": "복직근" })}
+              {renderPath("rect", { x: 252, y: 235, width: 33, height: 35, rx: 5, "data-name": "복직근" })}
+              {renderPath("rect", { x: 218, y: 275, width: 30, height: 40, rx: 5, "data-name": "복직근" })}
+              {renderPath("rect", { x: 252, y: 275, width: 30, height: 40, rx: 5, "data-name": "복직근" })}
+              {renderPath("rect", { x: 222, y: 320, width: 26, height: 45, rx: 5, "data-name": "복직근" })}
+              {renderPath("rect", { x: 252, y: 320, width: 26, height: 45, rx: 5, "data-name": "복직근" })}
+              {renderPath("polygon", { points: "185,230 155,240 170,280 210,270", "data-name": "우측 전거근" })}
+              {renderPath("polygon", { points: "315,230 345,240 330,280 290,270", "data-name": "좌측 전거근" })}
+              {renderPath("polygon", { points: "210,275 165,285 180,360 220,360", "data-name": "우측 복사근" })}
+              {renderPath("polygon", { points: "290,275 335,285 320,360 280,360", "data-name": "좌측 복사근" })}
+              {renderPath("polygon", { points: "248,365 230,365 235,440 248,430", className: "muscle-deep", "data-name": "우측 장요근 (심부)" })}
+              {renderPath("polygon", { points: "252,365 270,365 265,440 252,430", className: "muscle-deep", "data-name": "좌측 장요근 (심부)" })}
+              {renderPath("circle", { cx: 195, cy: 380, r: 12, "data-name": "우측 골반뼈 (ASIS)" })}
+              {renderPath("circle", { cx: 305, cy: 380, r: 12, "data-name": "좌측 골반뼈 (ASIS)" })}
+              {renderPath("polygon", { points: "195,375 190,385 235,445 240,435", "data-name": "우측 서혜부" })}
+              {renderPath("polygon", { points: "305,375 310,385 265,445 260,435", "data-name": "좌측 서혜부" })}
+              {renderPath("polygon", { points: "245,435 195,400 160,480 180,650 240,650", "data-name": "우측 대퇴사두근" })}
+              {renderPath("polygon", { points: "255,435 305,400 340,480 320,650 260,650", "data-name": "좌측 대퇴사두근" })}
+              {renderPath("polygon", { points: "160,480 145,530 170,650 180,650", "data-name": "우측 장경인대" })}
+              {renderPath("polygon", { points: "340,480 355,530 330,650 320,650", "data-name": "좌측 장경인대" })}
+              {renderPath("circle", { cx: 210, cy: 675, r: 22, "data-name": "우측 무릎뼈 (Patella)" })}
+              {renderPath("circle", { cx: 290, cy: 675, r: 22, "data-name": "좌측 무릎뼈 (Patella)" })}
+              {renderPath("polygon", { points: "210,700 205,700 195,830 205,830", "data-name": "우측 정강이뼈" })}
+              {renderPath("polygon", { points: "205,700 170,700 185,830 195,830", "data-name": "우측 전경골근" })}
+              {renderPath("polygon", { points: "235,700 215,700 205,830 220,830", "data-name": "우측 안쪽 종아리" })}
+              {renderPath("polygon", { points: "290,700 295,700 305,830 295,830", "data-name": "좌측 정강이뼈" })}
+              {renderPath("polygon", { points: "295,700 330,700 315,830 305,830", "data-name": "좌측 전경골근" })}
+              {renderPath("polygon", { points: "265,700 285,700 295,830 280,830", "data-name": "좌측 안쪽 종아리" })}
+              {renderPath("polygon", { points: "215,845 180,845 185,920 230,920", "data-name": "우측 발등" })}
+              {renderPath("polygon", { points: "285,845 320,845 315,920 270,920", "data-name": "좌측 발등" })}
+    </g>
+  );
+
+  const renderPosterior = () => (
+    <g data-view="posterior">
+              {renderPath("ellipse", { cx: 250, cy: 70, rx: 40, ry: 55, "data-name": "머리 뒤통수" })}
+              {renderPath("rect", { x: 247, y: 110, width: 6, height: 35, rx: 3, "data-name": "경추" })}
+              {renderPath("rect", { x: 247, y: 150, width: 6, height: 170, rx: 3, "data-name": "흉추" })}
+              {renderPath("rect", { x: 247, y: 325, width: 6, height: 50, rx: 3, "data-name": "요추" })}
+              {renderPath("polygon", { points: "250,380 242,385 250,420 258,385", "data-name": "천골" })}
+              {renderPath("rect", { x: 225, y: 110, width: 20, height: 20, rx: 4, className: "muscle-deep", "data-name": "좌측 후두하근 (심부)" })}
+              {renderPath("rect", { x: 255, y: 110, width: 20, height: 20, rx: 4, className: "muscle-deep", "data-name": "우측 후두하근 (심부)" })}
+              {renderPath("polygon", { points: "245,135 225,135 230,160 245,160", className: "muscle-deep", "data-name": "좌측 목 근육" })}
+              {renderPath("polygon", { points: "255,135 275,135 270,160 255,160", className: "muscle-deep", "data-name": "우측 목 근육" })}
+              {renderPath("polygon", { points: "245,145 200,155 170,165 245,185", "data-name": "좌측 상부승모근" })}
+              {renderPath("polygon", { points: "255,145 300,155 330,165 255,185", "data-name": "우측 상부승모근" })}
+              {renderPath("circle", { cx: 195, cy: 165, r: 10, "data-name": "좌측 견갑골 상각" })}
+              {renderPath("polygon", { points: "215,170 220,230 195,230 190,170", "data-name": "좌측 견갑골 내측연" })}
+              {renderPath("circle", { cx: 205, cy: 240, r: 10, "data-name": "좌측 견갑골 하각" })}
+              {renderPath("polygon", { points: "190,165 155,170 165,185 195,180", "data-name": "좌측 극상근" })}
+              {renderPath("polygon", { points: "195,180 160,190 175,230 195,230", "data-name": "좌측 극하근" })}
+              {renderPath("circle", { cx: 305, cy: 165, r: 10, "data-name": "우측 견갑골 상각" })}
+              {renderPath("polygon", { points: "285,170 280,230 305,230 310,170", "data-name": "우측 견갑골 내측연" })}
+              {renderPath("circle", { cx: 295, cy: 240, r: 10, "data-name": "우측 견갑골 하각" })}
+              {renderPath("polygon", { points: "310,165 345,170 335,185 305,180", "data-name": "우측 극상근" })}
+              {renderPath("polygon", { points: "305,180 340,190 325,230 305,230", "data-name": "우측 극하근" })}
+              {renderPath("polygon", { points: "160,165 140,180 150,230 170,190", "data-name": "좌측 후면 삼각근" })}
+              {renderPath("polygon", { points: "340,165 360,180 350,230 330,190", "data-name": "우측 후면 삼각근" })}
+              {renderPath("polygon", { points: "150,230 120,330 150,330 170,230", "data-name": "좌측 삼두근" })}
+              {renderPath("polygon", { points: "350,230 380,330 350,330 330,230", "data-name": "우측 삼두근" })}
+              {renderPath("circle", { cx: 120, cy: 335, r: 10, "data-name": "좌측 가쪽 상과" })}
+              {renderPath("circle", { cx: 380, cy: 335, r: 10, "data-name": "우측 가쪽 상과" })}
+              {renderPath("polygon", { points: "150,340 130,440 150,440 160,340", "data-name": "좌측 안쪽 전완" })}
+              {renderPath("polygon", { points: "120,340 100,440 130,440 140,340", "data-name": "좌측 가쪽 전완" })}
+              {renderPath("polygon", { points: "350,340 370,440 350,440 340,340", "data-name": "우측 안쪽 전완" })}
+              {renderPath("polygon", { points: "380,340 400,440 370,440 360,340", "data-name": "우측 가쪽 전완" })}
+              {renderPath("polygon", { points: "100,450 80,520 120,520 130,450", "data-name": "좌측 손등" })}
+              {renderPath("polygon", { points: "400,450 420,520 380,520 370,450", "data-name": "우측 손등" })}
+              {renderPath("polygon", { points: "245,190 205,240 165,290 245,340", "data-name": "좌측 광배근" })}
+              {renderPath("polygon", { points: "255,190 295,240 335,290 255,340", "data-name": "우측 광배근" })}
+              {renderPath("rect", { x: 230, y: 190, width: 14, height: 135, rx: 4, className: "muscle-deep", "data-name": "좌측 흉요추 기립근" })}
+              {renderPath("rect", { x: 256, y: 190, width: 14, height: 135, rx: 4, className: "muscle-deep", "data-name": "우측 흉요추 기립근" })}
+              {renderPath("polygon", { points: "245,330 215,335 220,370 245,370", className: "muscle-deep", "data-name": "좌측 요방형근 (심부)" })}
+              {renderPath("polygon", { points: "255,330 285,335 280,370 255,370", className: "muscle-deep", "data-name": "우측 요방형근 (심부)" })}
+              {renderPath("circle", { cx: 225, cy: 380, r: 10, "data-name": "좌측 PSIS" })}
+              {renderPath("circle", { cx: 275, cy: 380, r: 10, "data-name": "우측 PSIS" })}
+              {renderPath("polygon", { points: "215,370 170,390 185,420 220,395", "data-name": "좌측 중둔근" })}
+              {renderPath("polygon", { points: "285,370 330,390 315,420 280,395", "data-name": "우측 중둔근" })}
+              {renderPath("path", { d: "M 245,385 L 210,395 L 170,460 L 245,475 Z M 215,420 A 12 12 0 1 0 215 444 A 12 12 0 1 0 215 420 Z", fillRule: "evenodd", "data-name": "좌측 대둔근" })}
+              {renderPath("circle", { cx: 215, cy: 432, r: 12, className: "muscle-deep", "data-name": "좌측 이상근 (심부)" })}
+              {renderPath("path", { d: "M 255,385 L 290,395 L 330,460 L 255,475 Z M 285,420 A 12 12 0 1 0 285 444 A 12 12 0 1 0 285 420 Z", fillRule: "evenodd", "data-name": "우측 대둔근" })}
+              {renderPath("circle", { cx: 285, cy: 432, r: 12, className: "muscle-deep", "data-name": "우측 이상근 (심부)" })}
+              {renderPath("polygon", { points: "242,480 210,480 220,660 238,660", "data-name": "좌측 안쪽 햄스트링" })}
+              {renderPath("polygon", { points: "205,480 175,480 195,660 215,660", "data-name": "좌측 가쪽 햄스트링" })}
+              {renderPath("polygon", { points: "258,480 290,480 280,660 262,660", "data-name": "우측 안쪽 햄스트링" })}
+              {renderPath("polygon", { points: "295,480 325,480 305,660 285,660", "data-name": "우측 가쪽 햄스트링" })}
+              {renderPath("ellipse", { cx: 220, cy: 675, rx: 18, ry: 12, className: "muscle-deep", "data-name": "좌측 오금" })}
+              {renderPath("ellipse", { cx: 280, cy: 675, rx: 18, ry: 12, className: "muscle-deep", "data-name": "우측 오금" })}
+              {renderPath("polygon", { points: "238,690 220,690 215,800 230,800", "data-name": "좌측 안쪽 종아리" })}
+              {renderPath("polygon", { points: "215,690 190,690 205,800 210,800", "data-name": "좌측 가쪽 종아리" })}
+              {renderPath("polygon", { points: "262,690 280,690 285,800 270,800", "data-name": "우측 안쪽 종아리" })}
+              {renderPath("polygon", { points: "285,690 310,690 295,800 290,800", "data-name": "우측 가쪽 종아리" })}
+              {renderPath("polygon", { points: "225,805 210,805 210,860 225,860", "data-name": "좌측 아킬레스건" })}
+              {renderPath("polygon", { points: "275,805 290,805 290,860 275,860", "data-name": "우측 아킬레스건" })}
+              {renderPath("polygon", { points: "230,870 205,870 200,890 235,890", "data-name": "좌측 발뒤꿈치" })}
+              {renderPath("polygon", { points: "235,890 200,890 195,930 240,930", "data-name": "좌측 앞발바닥" })}
+              {renderPath("polygon", { points: "270,870 295,870 300,890 265,890", "data-name": "우측 발뒤꿈치" })}
+              {renderPath("polygon", { points: "265,890 300,890 305,930 260,930", "data-name": "우측 앞발바닥" })}
+    </g>
+  );
+
   // To support labels (1,2,3), we could use SVG text if we had bounding boxes, 
   // but to keep the React port reliable and responsive, CSS `fill` and `stroke` already show severity clearly.
   // We will include the CSS in a style tag.
@@ -320,62 +447,7 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
             <text x="50" y="50" className="lr-marker">R (우측)</text>
             <text x="380" y="50" className="lr-marker">L (좌측)</text>
 
-            <g data-view="anterior">
-              {renderPath("ellipse", { cx: 250, cy: 70, rx: 40, ry: 55, "data-name": "머리 및 안면" })}
-              {renderPath("circle", { cx: 220, cy: 90, r: 12, "data-name": "우측 턱관절 (TMJ)" })}
-              {renderPath("circle", { cx: 280, cy: 90, r: 12, "data-name": "좌측 턱관절 (TMJ)" })}
-              {renderPath("polygon", { points: "215,105 225,105 245,145 235,145", "data-name": "우측 흉쇄유돌근" })}
-              {renderPath("polygon", { points: "275,105 285,105 265,145 255,145", "data-name": "좌측 흉쇄유돌근" })}
-              {renderPath("rect", { x: 246, y: 150, width: 8, height: 70, rx: 4, "data-name": "흉골" })}
-              {renderPath("polygon", { points: "246,150 180,150 160,220 246,230", "data-name": "우측 대흉근" })}
-              {renderPath("polygon", { points: "254,150 320,150 340,220 254,230", "data-name": "좌측 대흉근" })}
-              {renderPath("polygon", { points: "225,155 185,175 200,205", className: "muscle-deep", "data-name": "우측 소흉근 (심부)" })}
-              {renderPath("polygon", { points: "275,155 315,175 300,205", className: "muscle-deep", "data-name": "좌측 소흉근 (심부)" })}
-              {renderPath("polygon", { points: "180,150 160,160 145,230 160,220", "data-name": "우측 전면 삼각근" })}
-              {renderPath("polygon", { points: "160,160 140,170 130,240 145,230", "data-name": "우측 측면 삼각근" })}
-              {renderPath("polygon", { points: "320,150 340,160 355,230 340,220", "data-name": "좌측 전면 삼각근" })}
-              {renderPath("polygon", { points: "340,160 360,170 370,240 355,230", "data-name": "좌측 측면 삼각근" })}
-              {renderPath("polygon", { points: "130,240 110,330 140,330 160,220", "data-name": "우측 이두근" })}
-              {renderPath("polygon", { points: "370,240 390,330 360,330 340,220", "data-name": "좌측 이두근" })}
-              {renderPath("circle", { cx: 145, cy: 335, r: 10, "data-name": "우측 안쪽 상과" })}
-              {renderPath("circle", { cx: 355, cy: 335, r: 10, "data-name": "좌측 안쪽 상과" })}
-              {renderPath("polygon", { points: "140,340 120,440 140,440 150,340", "data-name": "우측 안쪽 전완" })}
-              {renderPath("polygon", { points: "110,340 90,440 120,440 130,340", "data-name": "우측 가쪽 전완" })}
-              {renderPath("polygon", { points: "360,340 380,440 360,440 350,340", "data-name": "좌측 안쪽 전완" })}
-              {renderPath("polygon", { points: "390,340 410,440 380,440 370,340", "data-name": "좌측 가쪽 전완" })}
-              {renderPath("polygon", { points: "90,450 70,520 110,520 120,450", "data-name": "우측 손" })}
-              {renderPath("polygon", { points: "410,450 430,520 390,520 380,450", "data-name": "좌측 손" })}
-              {renderPath("rect", { x: 215, y: 235, width: 33, height: 35, rx: 5, "data-name": "복직근" })}
-              {renderPath("rect", { x: 252, y: 235, width: 33, height: 35, rx: 5, "data-name": "복직근" })}
-              {renderPath("rect", { x: 218, y: 275, width: 30, height: 40, rx: 5, "data-name": "복직근" })}
-              {renderPath("rect", { x: 252, y: 275, width: 30, height: 40, rx: 5, "data-name": "복직근" })}
-              {renderPath("rect", { x: 222, y: 320, width: 26, height: 45, rx: 5, "data-name": "복직근" })}
-              {renderPath("rect", { x: 252, y: 320, width: 26, height: 45, rx: 5, "data-name": "복직근" })}
-              {renderPath("polygon", { points: "185,230 155,240 170,280 210,270", "data-name": "우측 전거근" })}
-              {renderPath("polygon", { points: "315,230 345,240 330,280 290,270", "data-name": "좌측 전거근" })}
-              {renderPath("polygon", { points: "210,275 165,285 180,360 220,360", "data-name": "우측 복사근" })}
-              {renderPath("polygon", { points: "290,275 335,285 320,360 280,360", "data-name": "좌측 복사근" })}
-              {renderPath("polygon", { points: "248,365 230,365 235,440 248,430", className: "muscle-deep", "data-name": "우측 장요근 (심부)" })}
-              {renderPath("polygon", { points: "252,365 270,365 265,440 252,430", className: "muscle-deep", "data-name": "좌측 장요근 (심부)" })}
-              {renderPath("circle", { cx: 195, cy: 380, r: 12, "data-name": "우측 골반뼈 (ASIS)" })}
-              {renderPath("circle", { cx: 305, cy: 380, r: 12, "data-name": "좌측 골반뼈 (ASIS)" })}
-              {renderPath("polygon", { points: "195,375 190,385 235,445 240,435", "data-name": "우측 서혜부" })}
-              {renderPath("polygon", { points: "305,375 310,385 265,445 260,435", "data-name": "좌측 서혜부" })}
-              {renderPath("polygon", { points: "245,435 195,400 160,480 180,650 240,650", "data-name": "우측 대퇴사두근" })}
-              {renderPath("polygon", { points: "255,435 305,400 340,480 320,650 260,650", "data-name": "좌측 대퇴사두근" })}
-              {renderPath("polygon", { points: "160,480 145,530 170,650 180,650", "data-name": "우측 장경인대" })}
-              {renderPath("polygon", { points: "340,480 355,530 330,650 320,650", "data-name": "좌측 장경인대" })}
-              {renderPath("circle", { cx: 210, cy: 675, r: 22, "data-name": "우측 무릎뼈 (Patella)" })}
-              {renderPath("circle", { cx: 290, cy: 675, r: 22, "data-name": "좌측 무릎뼈 (Patella)" })}
-              {renderPath("polygon", { points: "210,700 205,700 195,830 205,830", "data-name": "우측 정강이뼈" })}
-              {renderPath("polygon", { points: "205,700 170,700 185,830 195,830", "data-name": "우측 전경골근" })}
-              {renderPath("polygon", { points: "235,700 215,700 205,830 220,830", "data-name": "우측 안쪽 종아리" })}
-              {renderPath("polygon", { points: "290,700 295,700 305,830 295,830", "data-name": "좌측 정강이뼈" })}
-              {renderPath("polygon", { points: "295,700 330,700 315,830 305,830", "data-name": "좌측 전경골근" })}
-              {renderPath("polygon", { points: "265,700 285,700 295,830 280,830", "data-name": "좌측 안쪽 종아리" })}
-              {renderPath("polygon", { points: "215,845 180,845 185,920 230,920", "data-name": "우측 발등" })}
-              {renderPath("polygon", { points: "285,845 320,845 315,920 270,920", "data-name": "좌측 발등" })}
-            </g>
+            {renderAnterior()}
           </svg>
         </div>
 
@@ -389,71 +461,7 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
             <text x="50" y="50" className="lr-marker">L (좌측)</text>
             <text x="380" y="50" className="lr-marker">R (우측)</text>
 
-            <g data-view="posterior">
-              {renderPath("ellipse", { cx: 250, cy: 70, rx: 40, ry: 55, "data-name": "머리 뒤통수" })}
-              {renderPath("rect", { x: 247, y: 110, width: 6, height: 35, rx: 3, "data-name": "경추" })}
-              {renderPath("rect", { x: 247, y: 150, width: 6, height: 170, rx: 3, "data-name": "흉추" })}
-              {renderPath("rect", { x: 247, y: 325, width: 6, height: 50, rx: 3, "data-name": "요추" })}
-              {renderPath("polygon", { points: "250,380 242,385 250,420 258,385", "data-name": "천골" })}
-              {renderPath("rect", { x: 225, y: 110, width: 20, height: 20, rx: 4, className: "muscle-deep", "data-name": "좌측 후두하근 (심부)" })}
-              {renderPath("rect", { x: 255, y: 110, width: 20, height: 20, rx: 4, className: "muscle-deep", "data-name": "우측 후두하근 (심부)" })}
-              {renderPath("polygon", { points: "245,135 225,135 230,160 245,160", className: "muscle-deep", "data-name": "좌측 목 근육" })}
-              {renderPath("polygon", { points: "255,135 275,135 270,160 255,160", className: "muscle-deep", "data-name": "우측 목 근육" })}
-              {renderPath("polygon", { points: "245,145 200,155 170,165 245,185", "data-name": "좌측 상부승모근" })}
-              {renderPath("polygon", { points: "255,145 300,155 330,165 255,185", "data-name": "우측 상부승모근" })}
-              {renderPath("circle", { cx: 195, cy: 165, r: 10, "data-name": "좌측 견갑골 상각" })}
-              {renderPath("polygon", { points: "215,170 220,230 195,230 190,170", "data-name": "좌측 견갑골 내측연" })}
-              {renderPath("circle", { cx: 205, cy: 240, r: 10, "data-name": "좌측 견갑골 하각" })}
-              {renderPath("polygon", { points: "190,165 155,170 165,185 195,180", "data-name": "좌측 극상근" })}
-              {renderPath("polygon", { points: "195,180 160,190 175,230 195,230", "data-name": "좌측 극하근" })}
-              {renderPath("circle", { cx: 305, cy: 165, r: 10, "data-name": "우측 견갑골 상각" })}
-              {renderPath("polygon", { points: "285,170 280,230 305,230 310,170", "data-name": "우측 견갑골 내측연" })}
-              {renderPath("circle", { cx: 295, cy: 240, r: 10, "data-name": "우측 견갑골 하각" })}
-              {renderPath("polygon", { points: "310,165 345,170 335,185 305,180", "data-name": "우측 극상근" })}
-              {renderPath("polygon", { points: "305,180 340,190 325,230 305,230", "data-name": "우측 극하근" })}
-              {renderPath("polygon", { points: "160,165 140,180 150,230 170,190", "data-name": "좌측 후면 삼각근" })}
-              {renderPath("polygon", { points: "340,165 360,180 350,230 330,190", "data-name": "우측 후면 삼각근" })}
-              {renderPath("polygon", { points: "150,230 120,330 150,330 170,230", "data-name": "좌측 삼두근" })}
-              {renderPath("polygon", { points: "350,230 380,330 350,330 330,230", "data-name": "우측 삼두근" })}
-              {renderPath("circle", { cx: 120, cy: 335, r: 10, "data-name": "좌측 가쪽 상과" })}
-              {renderPath("circle", { cx: 380, cy: 335, r: 10, "data-name": "우측 가쪽 상과" })}
-              {renderPath("polygon", { points: "150,340 130,440 150,440 160,340", "data-name": "좌측 안쪽 전완" })}
-              {renderPath("polygon", { points: "120,340 100,440 130,440 140,340", "data-name": "좌측 가쪽 전완" })}
-              {renderPath("polygon", { points: "350,340 370,440 350,440 340,340", "data-name": "우측 안쪽 전완" })}
-              {renderPath("polygon", { points: "380,340 400,440 370,440 360,340", "data-name": "우측 가쪽 전완" })}
-              {renderPath("polygon", { points: "100,450 80,520 120,520 130,450", "data-name": "좌측 손등" })}
-              {renderPath("polygon", { points: "400,450 420,520 380,520 370,450", "data-name": "우측 손등" })}
-              {renderPath("polygon", { points: "245,190 205,240 165,290 245,340", "data-name": "좌측 광배근" })}
-              {renderPath("polygon", { points: "255,190 295,240 335,290 255,340", "data-name": "우측 광배근" })}
-              {renderPath("rect", { x: 230, y: 190, width: 14, height: 135, rx: 4, className: "muscle-deep", "data-name": "좌측 흉요추 기립근" })}
-              {renderPath("rect", { x: 256, y: 190, width: 14, height: 135, rx: 4, className: "muscle-deep", "data-name": "우측 흉요추 기립근" })}
-              {renderPath("polygon", { points: "245,330 215,335 220,370 245,370", className: "muscle-deep", "data-name": "좌측 요방형근 (심부)" })}
-              {renderPath("polygon", { points: "255,330 285,335 280,370 255,370", className: "muscle-deep", "data-name": "우측 요방형근 (심부)" })}
-              {renderPath("circle", { cx: 225, cy: 380, r: 10, "data-name": "좌측 PSIS" })}
-              {renderPath("circle", { cx: 275, cy: 380, r: 10, "data-name": "우측 PSIS" })}
-              {renderPath("polygon", { points: "215,370 170,390 185,420 220,395", "data-name": "좌측 중둔근" })}
-              {renderPath("polygon", { points: "285,370 330,390 315,420 280,395", "data-name": "우측 중둔근" })}
-              {renderPath("path", { d: "M 245,385 L 210,395 L 170,460 L 245,475 Z M 215,420 A 12 12 0 1 0 215 444 A 12 12 0 1 0 215 420 Z", fillRule: "evenodd", "data-name": "좌측 대둔근" })}
-              {renderPath("circle", { cx: 215, cy: 432, r: 12, className: "muscle-deep", "data-name": "좌측 이상근 (심부)" })}
-              {renderPath("path", { d: "M 255,385 L 290,395 L 330,460 L 255,475 Z M 285,420 A 12 12 0 1 0 285 444 A 12 12 0 1 0 285 420 Z", fillRule: "evenodd", "data-name": "우측 대둔근" })}
-              {renderPath("circle", { cx: 285, cy: 432, r: 12, className: "muscle-deep", "data-name": "우측 이상근 (심부)" })}
-              {renderPath("polygon", { points: "242,480 210,480 220,660 238,660", "data-name": "좌측 안쪽 햄스트링" })}
-              {renderPath("polygon", { points: "205,480 175,480 195,660 215,660", "data-name": "좌측 가쪽 햄스트링" })}
-              {renderPath("polygon", { points: "258,480 290,480 280,660 262,660", "data-name": "우측 안쪽 햄스트링" })}
-              {renderPath("polygon", { points: "295,480 325,480 305,660 285,660", "data-name": "우측 가쪽 햄스트링" })}
-              {renderPath("ellipse", { cx: 220, cy: 675, rx: 18, ry: 12, className: "muscle-deep", "data-name": "좌측 오금" })}
-              {renderPath("ellipse", { cx: 280, cy: 675, rx: 18, ry: 12, className: "muscle-deep", "data-name": "우측 오금" })}
-              {renderPath("polygon", { points: "238,690 220,690 215,800 230,800", "data-name": "좌측 안쪽 종아리" })}
-              {renderPath("polygon", { points: "215,690 190,690 205,800 210,800", "data-name": "좌측 가쪽 종아리" })}
-              {renderPath("polygon", { points: "262,690 280,690 285,800 270,800", "data-name": "우측 안쪽 종아리" })}
-              {renderPath("polygon", { points: "285,690 310,690 295,800 290,800", "data-name": "우측 가쪽 종아리" })}
-              {renderPath("polygon", { points: "225,805 210,805 210,860 225,860", "data-name": "좌측 아킬레스건" })}
-              {renderPath("polygon", { points: "275,805 290,805 290,860 275,860", "data-name": "우측 아킬레스건" })}
-              {renderPath("polygon", { points: "230,870 205,870 200,890 235,890", "data-name": "좌측 발뒤꿈치" })}
-              {renderPath("polygon", { points: "235,890 200,890 195,930 240,930", "data-name": "좌측 앞발바닥" })}
-              {renderPath("polygon", { points: "270,870 295,870 300,890 265,890", "data-name": "우측 발뒤꿈치" })}
-              {renderPath("polygon", { points: "265,890 300,890 305,930 260,930", "data-name": "우측 앞발바닥" })}
-            </g>
+            {renderPosterior()}
           </svg>
         </div>
       </div>
@@ -537,9 +545,9 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
               style={{
                 width: magnify.svgRect?.width,
                 height: magnify.svgRect?.height,
-                left: magnify.svgRect ? 96 - (magnify.x - magnify.svgRect.left) * 2.5 : 0,
-                top: magnify.svgRect ? 96 - (magnify.y - magnify.svgRect.top) * 2.5 : 0,
-                transform: 'scale(2.5)',
+                left: magnify.svgRect ? 96 - (magnify.x - magnify.svgRect.left) * 1.5 : 0,
+                top: magnify.svgRect ? 96 - (magnify.y - magnify.svgRect.top) * 1.5 : 0,
+                transform: 'scale(1.5)',
                 transformOrigin: 'top left'
               }}
             >
