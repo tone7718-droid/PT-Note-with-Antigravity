@@ -12,7 +12,7 @@ export function PatientInfoSection({ isGeneratingPdf }: { isGeneratingPdf: boole
 
   const sectionTitleCls = isGeneratingPdf
     ? "text-lg font-bold text-black border-b-2 border-gray-400 pb-1 mb-2 mt-4"
-    : "text-lg sm:text-xl md:text-2xl font-bold text-gray-900 border-b-2 border-gray-100 pb-2 sm:pb-3 mb-4 sm:mb-6 print:text-xl print:mb-3 print:pb-2 print:-mt-2";
+    : "text-base sm:text-lg md:text-2xl font-bold text-gray-900 border-b-2 border-gray-100 pb-2 sm:pb-3 mb-3 sm:mb-6 print:text-xl print:mb-3 print:pb-2 print:-mt-2";
 
   return (
     <Card isPdfMode={isGeneratingPdf}>

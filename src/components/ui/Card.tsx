@@ -13,7 +13,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
         className={cn(
           isPdfMode
             ? "bg-transparent p-0 border-none shadow-none mb-4 break-inside-avoid"
-            : "bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100 print:p-0 print:border-none print:shadow-none print:break-inside-avoid print:mb-6",
+            : "bg-white p-4 sm:p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100 print:p-0 print:border-none print:shadow-none print:break-inside-avoid print:mb-6",
           className
         )}
         {...props}

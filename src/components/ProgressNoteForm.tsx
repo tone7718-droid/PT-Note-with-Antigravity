@@ -137,7 +137,7 @@ export default function ProgressNoteForm() {
   return (
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSaveSubmit, onInvalid)}>
-        <div className="max-w-5xl mx-auto px-5 sm:px-10 py-10 bg-gray-50/30 min-h-full pb-48 scroll-smooth print:bg-white print:p-0 print:m-0 print:pb-0">
+        <div className="max-w-5xl mx-auto px-3 sm:px-10 py-6 sm:py-10 bg-gray-50/30 min-h-full pb-48 scroll-smooth print:bg-white print:p-0 print:m-0 print:pb-0">
           <div className="w-full h-full">
             
             {/* 타이틀 & 버튼 */}
@@ -173,7 +173,7 @@ export default function ProgressNoteForm() {
               )}
             </div>
 
-            <div className="text-gray-800 space-y-10 sm:space-y-12 print:space-y-6">
+            <div className="text-gray-800 space-y-6 sm:space-y-10 md:space-y-12 print:space-y-6">
               <PatientInfoSection isGeneratingPdf={false} />
               <ComplaintSection isGeneratingPdf={false} />
               <BodyDiagramSection isGeneratingPdf={false} />
