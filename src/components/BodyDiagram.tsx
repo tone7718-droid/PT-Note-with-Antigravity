@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { RotateCw, CheckCircle2, X } from "lucide-react";
 
 export type BodyDiagramProps = {
@@ -59,6 +59,21 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startPos = useRef({ x: 0, y: 0, name: null as string | null });
   const isDragging = useRef(false);
+
+  const magnifyRef = useRef(magnify);
+  magnifyRef.current = magnify;
+
+  useEffect(() => {
+    const handleTouchMove = (e: TouchEvent) => {
+      if (magnifyRef.current?.active) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+    return () => {
+      document.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, []);
 
   const svgAntRef = useRef<SVGSVGElement>(null);
   const svgPostRef = useRef<SVGSVGElement>(null);
@@ -306,8 +321,8 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
               {renderPath("ellipse", { cx: 250, cy: 70, rx: 40, ry: 55, "data-name": "머리 및 안면" })}
               {renderPath("circle", { cx: 220, cy: 90, r: 12, "data-name": "우측 턱관절 (TMJ)" })}
               {renderPath("circle", { cx: 280, cy: 90, r: 12, "data-name": "좌측 턱관절 (TMJ)" })}
-              {renderPath("polygon", { points: "230,110 245,145 235,145", "data-name": "우측 흉쇄유돌근" })}
-              {renderPath("polygon", { points: "270,110 255,145 265,145", "data-name": "좌측 흉쇄유돌근" })}
+              {renderPath("polygon", { points: "215,105 225,105 245,145 235,145", "data-name": "우측 흉쇄유돌근" })}
+              {renderPath("polygon", { points: "275,105 285,105 265,145 255,145", "data-name": "좌측 흉쇄유돌근" })}
               {renderPath("rect", { x: 246, y: 150, width: 8, height: 70, rx: 4, "data-name": "흉골" })}
               {renderPath("polygon", { points: "246,150 180,150 160,220 246,230", "data-name": "우측 대흉근" })}
               {renderPath("polygon", { points: "254,150 320,150 340,220 254,230", "data-name": "좌측 대흉근" })}
@@ -530,8 +545,8 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
                     {renderPath("ellipse", { cx: 250, cy: 70, rx: 40, ry: 55, "data-name": "머리 및 안면" })}
                     {renderPath("circle", { cx: 220, cy: 90, r: 12, "data-name": "우측 턱관절 (TMJ)" })}
                     {renderPath("circle", { cx: 280, cy: 90, r: 12, "data-name": "좌측 턱관절 (TMJ)" })}
-                    {renderPath("polygon", { points: "230,110 245,145 235,145", "data-name": "우측 흉쇄유돌근" })}
-                    {renderPath("polygon", { points: "270,110 255,145 265,145", "data-name": "좌측 흉쇄유돌근" })}
+                    {renderPath("polygon", { points: "215,105 225,105 245,145 235,145", "data-name": "우측 흉쇄유돌근" })}
+                    {renderPath("polygon", { points: "275,105 285,105 265,145 255,145", "data-name": "좌측 흉쇄유돌근" })}
                     {renderPath("rect", { x: 246, y: 150, width: 8, height: 70, rx: 4, "data-name": "흉골" })}
                     {renderPath("polygon", { points: "246,150 180,150 160,220 246,230", "data-name": "우측 대흉근" })}
                     {renderPath("polygon", { points: "254,150 320,150 340,220 254,230", "data-name": "좌측 대흉근" })}
