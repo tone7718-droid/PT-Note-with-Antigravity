@@ -1,1 +1,0 @@
-refactor: extract anterior and posterior SVG logic into render functions and fix magnifier scale to 1.5x

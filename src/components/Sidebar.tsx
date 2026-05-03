@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useNoteStore } from "@/store/useNoteStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { Menu, Search, User, LogOut, Plus, Trash2, UserPlus, LogIn, ChevronDown, ChevronRight, ArrowRightLeft, Shield, Download, Upload } from "lucide-react";
+import { Menu, Search, User, LogOut, Plus, Trash2, UserPlus, LogIn, ChevronDown, ChevronRight, ArrowRightLeft, Shield, Download, Upload, Copy } from "lucide-react";
 import LoginModal from "./LoginModal";
 import TherapistManagementModal from "./TherapistManagementModal";
 
@@ -12,6 +12,7 @@ export default function Sidebar() {
   const selectedNoteId = useNoteStore((s) => s.selectedNoteId);
   const selectNote = useNoteStore((s) => s.selectNote);
   const createNewNote = useNoteStore((s) => s.createNewNote);
+  const duplicateNote = useNoteStore((s) => s.duplicateNote);
   const deleteNotes = useNoteStore((s) => s.deleteNotes);
   const transferNotes = useNoteStore((s) => s.transferNotes);
   const exportData = useNoteStore((s) => s.exportData);
@@ -219,9 +220,19 @@ export default function Sidebar() {
               <li key={note.id} onClick={() => { if (note.id) { if (isDeleteMode) setSelectedIds(prev => prev.includes(note.id!) ? prev.filter(i => i !== note.id) : [...prev, note.id!]); else selectNote(note.id); } }}
                 className={`group p-4 rounded-2xl cursor-pointer transition-all border-2 flex items-center gap-3 ${selectedNoteId === note.id && !isDeleteMode ? "bg-gray-100 border-gray-300" : "bg-white border-transparent shadow-sm"} ${isDeleteMode && note.id && selectedIds.includes(note.id) ? "border-red-200 bg-red-50" : ""}`}>
                 {isDeleteMode && <input type="checkbox" checked={!!note.id && selectedIds.includes(note.id)} readOnly className="w-5 h-5 rounded border-gray-300 text-red-600" aria-label={`${note.patientName} 기록 선택`} />}
-                <span className={`font-bold text-[15px] truncate block w-full text-left ${selectedNoteId === note.id && !isDeleteMode ? "text-gray-900" : isDeleteMode && note.id && selectedIds.includes(note.id) ? "text-red-800" : "text-gray-900"}`}>
+                <span className={`font-bold text-[15px] truncate block flex-1 text-left ${selectedNoteId === note.id && !isDeleteMode ? "text-gray-900" : isDeleteMode && note.id && selectedIds.includes(note.id) ? "text-red-800" : "text-gray-900"}`}>
                   {note.patientName || "(이름 없음)"} - {formatDate(note.savedAt || "")}
                 </span>
+                {!isDeleteMode && note.id && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); duplicateNote(note.id!); }}
+                    className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    aria-label={`${note.patientName} 노트 복사`}
+                    title="이 노트를 복사하여 새 노트 작성"
+                  >
+                    <Copy size={15} />
+                  </button>
+                )}
               </li>
             ))}
           </ul>

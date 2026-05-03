@@ -36,6 +36,11 @@ export default function ProgressNoteForm() {
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [lastAutoSaved, setLastAutoSaved] = useState<Date | null>(null);
   const [showMacroModal, setShowMacroModal] = useState(false);
+  const [isDuplicated, setIsDuplicated] = useState(false);
+
+  // 노트 복사 감지
+  const pendingDuplicate = useNoteStore((s) => s.pendingDuplicate);
+  const clearPendingDuplicate = useNoteStore((s) => s.clearPendingDuplicate);
 
   // 매크로 스토어 초기화
   useEffect(() => {
@@ -76,9 +81,22 @@ export default function ProgressNoteForm() {
   // selectedNoteId 변경 시 폼 데이터 로드 또는 리셋
   useEffect(() => {
     if (selectedNoteId === null) {
+      // pendingDuplicate가 있으면 복사된 데이터로 리셋
+      if (pendingDuplicate) {
+        const roms = pendingDuplicate.rom && pendingDuplicate.rom.length > 0
+          ? pendingDuplicate.rom
+          : [{ joint: "", measuredROM: "", normalRange: "" }];
+        reset({ ...pendingDuplicate, rom: roms } as NoteData);
+        setCurrentNoteId(null);
+        setSavedTherapist(null);
+        setIsDuplicated(true);
+        clearPendingDuplicate();
+        return;
+      }
       reset({ ...EMPTY_NOTE, noteDate: new Date().toISOString().split("T")[0], rom: [{ joint: "", measuredROM: "", normalRange: "" }] });
       setCurrentNoteId(null);
       setSavedTherapist(null);
+      setIsDuplicated(false);
       return;
     }
     const note = notes.find((n) => n.id === selectedNoteId);
@@ -87,8 +105,9 @@ export default function ProgressNoteForm() {
       reset({ ...note, rom: roms });
       setCurrentNoteId(note.id ?? null);
       setSavedTherapist(note.therapist ?? null);
+      setIsDuplicated(false);
     }
-  }, [selectedNoteId, notes, reset]);
+  }, [selectedNoteId, notes, reset, pendingDuplicate, clearPendingDuplicate]);
 
   // 저장 로직
   const onSaveSubmit = async (data: NoteData) => {
@@ -160,6 +179,10 @@ export default function ProgressNoteForm() {
               {currentNoteId ? (
                 <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-full shadow-sm ml-auto">
                   기존 노트 수정 중: <span className="font-bold">{patientName || "(이름 없음)"}</span>
+                </span>
+              ) : isDuplicated ? (
+                <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-50 text-purple-800 border border-purple-200 rounded-full shadow-sm ml-auto">
+                  📋 노트 복사됨 — 새 노트로 저장됩니다
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-50 text-green-800 border border-green-200 rounded-full shadow-sm ml-auto">

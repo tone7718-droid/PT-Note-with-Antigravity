@@ -6,12 +6,15 @@ import { useAuthStore } from "./useAuthStore";
 interface NoteStore {
   notes: NoteData[];
   selectedNoteId: string | null;
+  pendingDuplicate: Omit<NoteData, "id" | "savedAt"> | null;
   hasLocalData: boolean;
   isLoading: boolean;
   error: string | null;
   
   selectNote: (id: string | null) => void;
   createNewNote: () => void;
+  duplicateNote: (id: string) => void;
+  clearPendingDuplicate: () => void;
   refreshNotes: () => Promise<void>;
   saveNote: (data: Omit<NoteData, "id" | "savedAt">, existingId?: string | null) => Promise<NoteData>;
   deleteNotes: (ids: string[]) => Promise<void>;
@@ -25,12 +28,42 @@ interface NoteStore {
 export const useNoteStore = create<NoteStore>((set, get) => ({
   notes: [],
   selectedNoteId: null,
+  pendingDuplicate: null,
   hasLocalData: false,
   isLoading: false,
   error: null,
 
   selectNote: (id) => set({ selectedNoteId: id }),
-  createNewNote: () => set({ selectedNoteId: null }),
+  createNewNote: () => set({ selectedNoteId: null, pendingDuplicate: null }),
+
+  duplicateNote: (id) => {
+    const note = get().notes.find((n) => n.id === id);
+    if (!note) return;
+    // Copy clinical data, reset patient info and identity
+    const duplicated: Omit<NoteData, "id" | "savedAt"> = {
+      patientName: note.patientName,
+      chartNo: note.chartNo,
+      birthDate: note.birthDate,
+      gender: note.gender,
+      diagnosis: note.diagnosis,
+      pmh: note.pmh,
+      painScore: note.painScore,
+      painAreas: { ...note.painAreas },
+      chiefComplaint: note.chiefComplaint,
+      rom: note.rom?.map((r) => ({ ...r })) || [],
+      postural: note.postural,
+      palpation: note.palpation,
+      specialTest: note.specialTest,
+      treatment: note.treatment,
+      homeExercise: note.homeExercise,
+      noteDate: new Date().toISOString().split("T")[0],
+      therapist: null,
+      therapistUid: "",
+    };
+    set({ selectedNoteId: null, pendingDuplicate: duplicated });
+  },
+
+  clearPendingDuplicate: () => set({ pendingDuplicate: null }),
 
   checkLocalData: () => {
     if (typeof window !== "undefined") {
