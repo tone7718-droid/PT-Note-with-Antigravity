@@ -170,13 +170,16 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
     if (isDragging.current && magnify) {
       // Create a temporary class on magnifier to hide it from elementFromPoint
       const magEl = document.getElementById('magnifier-overlay');
+      const backdropEl = document.getElementById('magnifier-backdrop');
       if (magEl) magEl.style.pointerEvents = 'none';
+      if (backdropEl) backdropEl.style.pointerEvents = 'none';
       
       const el = document.elementFromPoint(e.clientX, e.clientY);
       const target = el?.closest("[data-name]");
       const name = target ? target.getAttribute("data-name") : magnify.targetName;
       
       if (magEl) magEl.style.pointerEvents = 'auto';
+      if (backdropEl) backdropEl.style.pointerEvents = 'auto';
 
       setMagnify(prev => prev ? { ...prev, x: e.clientX, y: e.clientY, targetName: name } : null);
     }
@@ -503,6 +506,7 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
       {magnify?.active && (
         <>
           <div 
+            id="magnifier-backdrop"
             className="fixed inset-0 z-[150]" 
             onClick={() => setMagnify(null)}
             onTouchEnd={(e) => { e.preventDefault(); setMagnify(null); }}
