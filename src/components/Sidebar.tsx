@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useNoteStore } from "@/store/useNoteStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { Menu, Search, User, LogOut, Plus, Trash2, UserPlus, LogIn, ChevronDown, ChevronRight, ArrowRightLeft, Shield, Download, Upload, Copy, Filter, Calendar, ListFilter, SortAsc, SortDesc } from "lucide-react";
+import { Menu, Search, User, LogOut, Plus, Trash2, UserPlus, LogIn, ChevronDown, ChevronRight, ArrowRightLeft, Shield, Download, Upload, Copy, Filter, Calendar, ListFilter, SortAsc, SortDesc, TrendingUp } from "lucide-react";
 import LoginModal from "./LoginModal";
 import TherapistManagementModal from "./TherapistManagementModal";
 import PatientTrendChart from "./PatientTrendChart";
