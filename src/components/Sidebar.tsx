@@ -308,14 +308,19 @@ export default function Sidebar() {
         <div className="px-4 pt-2 pb-1 flex justify-between items-center">
           <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">최신 치료 내역</h3>
           {filteredNotes.length > 0 && (
-            <button onClick={() => { 
-              if (isDeleteMode && selectedIds.length > 0) {
-                setShowDeleteModal(true);
-              } else {
-                setIsDeleteMode(!isDeleteMode); 
-                setSelectedIds([]); 
-              }
-            }} className={`p-1.5 rounded-md transition-colors ${isDeleteMode ? "text-red-600 bg-red-50 dark:bg-red-900/30" : "text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"}`} aria-label="삭제 모드 전환" title="삭제 모드 전환"><Trash2 size={16} /></button>
+            <div className="flex items-center gap-1">
+              {isDeleteMode && (
+                <button onClick={() => { setIsDeleteMode(false); setSelectedIds([]); }} className="px-2 py-1 text-xs font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">취소</button>
+              )}
+              <button onClick={() => { 
+                if (isDeleteMode && selectedIds.length > 0) {
+                  setShowDeleteModal(true);
+                } else {
+                  setIsDeleteMode(!isDeleteMode); 
+                  setSelectedIds([]); 
+                }
+              }} className={`p-1.5 rounded-md transition-colors ${isDeleteMode ? "text-red-600 bg-red-50 dark:bg-red-900/30" : "text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800"}`} aria-label="삭제 모드 전환" title="삭제 모드 전환"><Trash2 size={16} /></button>
+            </div>
           )}
         </div>
 
@@ -385,9 +390,6 @@ export default function Sidebar() {
 
       <div className="p-4 bg-gray-50 dark:bg-gray-900 shrink-0 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between min-h-[56px]">
         <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">총 {notes.length}건</span>
-        {isDeleteMode && selectedIds.length > 0 && (
-          <button onClick={() => setShowDeleteModal(true)} className="px-4 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20">기록 삭제 ({selectedIds.length}건)</button>
-        )}
       </div>
 
       {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}
