@@ -7,6 +7,8 @@ import LoginModal from "@/components/LoginModal";
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useNoteStore } from "@/store/useNoteStore";
+import { useThemeStore } from "@/store/useThemeStore";
+import { Moon, Sun } from "lucide-react";
 
 function HomeContent() {
   const therapist = useAuthStore((s) => s.therapist);
@@ -15,8 +17,16 @@ function HomeContent() {
   const isLoading = isAuthLoading || isNoteLoading;
   const initSync = useNoteStore((s) => s.initSync);
   const checkLocalData = useNoteStore((s) => s.checkLocalData);
+  const theme = useThemeStore((s) => s.theme);
+  const resolvedTheme = useThemeStore((s) => s.resolved);
+  const setTheme = useThemeStore((s) => s.setTheme);
+  const initTheme = useThemeStore((s) => s.init);
   
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    initTheme();
+  }, [initTheme]);
 
   useEffect(() => {
     checkLocalData();
@@ -33,10 +43,10 @@ function HomeContent() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
+      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-500 font-bold">로딩 중...</p>
+          <div className="w-12 h-12 border-4 border-gray-900 dark:border-white border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500 dark:text-gray-400 font-bold">로딩 중...</p>
         </div>
       </div>
     );
@@ -44,27 +54,36 @@ function HomeContent() {
 
   if (!therapist) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
+      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
         <LoginModal onClose={() => {}} hideCancel />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col lg:flex-row h-[100dvh] bg-gray-50 text-gray-900 overflow-hidden font-sans">
+    <div className="flex flex-col lg:flex-row h-[100dvh] bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 overflow-hidden font-sans print:h-auto print:overflow-visible print:block">
       {/* Mobile Header */}
-      <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shadow-sm z-20 shrink-0">
+      <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm z-20 shrink-0 print:hidden">
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="p-2 -ml-2 rounded-xl hover:bg-gray-100 text-gray-700 transition-colors"
+          className="p-2 -ml-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
           aria-label="사이드바 열기"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
         </button>
-        <span className="font-black text-lg tracking-tight">PT NOTE</span>
-        <span className="text-sm font-bold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full truncate max-w-[120px]">
-          {therapist.name} {therapist.id && <span className="font-mono text-[10px]">({therapist.id})</span>}
-        </span>
+        <span className="font-black text-lg tracking-tight dark:text-white">PT NOTE</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors"
+            aria-label="테마 변경"
+          >
+            {resolvedTheme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+          <span className="text-sm font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full truncate max-w-[100px]">
+            {therapist.name}
+          </span>
+        </div>
       </div>
 
       {/* Sidebar Overlay (Mobile) */}
@@ -77,14 +96,14 @@ function HomeContent() {
 
       {/* Sidebar */}
       <div className={`
-        fixed inset-y-0 left-0 z-40 w-4/5 max-w-[360px] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:w-[360px] xl:w-[400px] lg:shadow-sm lg:border-r border-gray-200
+        fixed inset-y-0 left-0 z-40 w-4/5 max-w-[360px] bg-white dark:bg-gray-900 shadow-2xl transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:w-[360px] xl:w-[400px] lg:shadow-sm lg:border-r border-gray-200 dark:border-gray-800 print:hidden
         ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
       `}>
         <Sidebar />
       </div>
 
       {/* Form */}
-      <div className="w-full flex-1 overflow-y-auto relative bg-white scroll-smooth h-full">
+      <div className="w-full flex-1 overflow-y-auto relative bg-white dark:bg-gray-900 scroll-smooth h-full print:h-auto print:overflow-visible print:block">
         <ProgressNoteForm />
       </div>
     </div>

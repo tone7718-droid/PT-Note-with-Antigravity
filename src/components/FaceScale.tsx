@@ -37,7 +37,7 @@ export default function FaceScale({ value: controlledValue, onChange }: FaceScal
 
   return (
     <div>
-      <h3 className="text-base font-bold text-gray-800 mb-8">
+      <h3 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-8">
         통증 정도 (VAS 0~10)
       </h3>
 
@@ -55,7 +55,7 @@ export default function FaceScale({ value: controlledValue, onChange }: FaceScal
                   focus:outline-none focus:ring-4 focus:ring-opacity-50
                   ${isSelected
                     ? "text-white shadow-xl scale-125 z-10"
-                    : "bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50 hover:scale-110 shadow-sm"
+                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:scale-110 shadow-sm"
                   }
                 `}
                 style={isSelected ? { 
@@ -85,7 +85,7 @@ export default function FaceScale({ value: controlledValue, onChange }: FaceScal
             선택된 통증 점수: {selected}점 — {scaleData.find(d => d.value === selected)?.label}
           </div>
         ) : (
-          <div className="text-gray-400 italic text-sm">
+          <div className="text-gray-400 dark:text-gray-600 italic text-sm">
             숫자를 클릭하여 통증 정도를 선택해주세요.
           </div>
         )}

@@ -156,20 +156,20 @@ export default function ProgressNoteForm() {
   return (
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSaveSubmit, onInvalid)}>
-        <div className="max-w-5xl mx-auto px-3 sm:px-10 py-6 sm:py-10 bg-gray-50/30 min-h-full pb-48 scroll-smooth print:bg-white print:p-0 print:m-0 print:pb-0">
+        <div className="max-w-5xl mx-auto px-3 sm:px-10 py-6 sm:py-10 bg-gray-50/30 dark:bg-gray-900 min-h-full pb-48 scroll-smooth print:bg-white print:p-0 print:m-0 print:pb-0">
           <div className="w-full h-full">
             
             {/* 타이틀 & 버튼 */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b-2 border-gray-200 mb-10 gap-4 print:border-transparent print:mb-6 print:pb-2">
-              <h1 className="font-extrabold text-center sm:text-left tracking-tight text-3xl sm:text-4xl text-gray-900 print:text-3xl print:text-left print:border-b-4 print:border-gray-800 print:pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b-2 border-gray-200 dark:border-gray-800 mb-10 gap-4 print:border-transparent print:mb-6 print:pb-2">
+              <h1 className="font-extrabold text-center sm:text-left tracking-tight text-3xl sm:text-4xl text-gray-900 dark:text-white print:text-3xl print:text-left print:border-b-4 print:border-gray-800 print:pb-4">
                 물리치료 환자 평가지
               </h1>
               
               <div className="flex items-center gap-2 justify-center sm:justify-end hidden sm:flex print:hidden">
-                <button type="button" onClick={() => setShowMacroModal(true)} className="flex items-center gap-2 px-5 py-3 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold rounded-xl shadow-sm hover:shadow-md transition-all" aria-label="매크로 문구 등록">
+                <button type="button" onClick={() => setShowMacroModal(true)} className="flex items-center gap-2 px-5 py-3 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 font-bold rounded-xl shadow-sm hover:shadow-md transition-all" aria-label="매크로 문구 등록">
                   ⚡ 매크로 등록
                 </button>
-                <button type="button" onClick={handlePrint} className="flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl shadow-md hover:shadow-xl transition-all" aria-label="기록 인쇄 및 PDF 저장">
+                <button type="button" onClick={handlePrint} className="flex items-center gap-2 px-6 py-3 bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900 font-bold rounded-xl shadow-md hover:shadow-xl transition-all" aria-label="기록 인쇄 및 PDF 저장">
                   🖨️ 인쇄 / PDF 저장
                 </button>
               </div>
@@ -177,15 +177,15 @@ export default function ProgressNoteForm() {
 
             <div className="mb-8 flex justify-between items-center text-sm font-medium print:hidden">
               {currentNoteId ? (
-                <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-full shadow-sm ml-auto">
+                <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 rounded-full shadow-sm ml-auto">
                   기존 노트 수정 중: <span className="font-bold">{patientName || "(이름 없음)"}</span>
                 </span>
               ) : isDuplicated ? (
-                <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-50 text-purple-800 border border-purple-200 rounded-full shadow-sm ml-auto">
+                <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-50 dark:bg-purple-900/20 text-purple-800 dark:text-purple-400 border border-purple-200 dark:border-purple-900/50 rounded-full shadow-sm ml-auto">
                   📋 노트 복사됨 — 새 노트로 저장됩니다
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-50 text-green-800 border border-green-200 rounded-full shadow-sm ml-auto">
+                <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border border-green-200 dark:border-green-900/50 rounded-full shadow-sm ml-auto">
                   ✨ 새 노트 작성
                 </span>
               )}
@@ -196,7 +196,7 @@ export default function ProgressNoteForm() {
               )}
             </div>
 
-            <div className="text-gray-800 space-y-6 sm:space-y-10 md:space-y-12 print:space-y-6">
+            <div className="text-gray-800 dark:text-gray-200 space-y-6 sm:space-y-10 md:space-y-12 print:space-y-6">
               <PatientInfoSection isGeneratingPdf={false} />
               <ComplaintSection isGeneratingPdf={false} />
               <BodyDiagramSection isGeneratingPdf={false} />

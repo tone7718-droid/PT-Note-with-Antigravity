@@ -386,8 +386,8 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
   return (
     <div className="w-full flex flex-col items-center">
       <style>{`
-        .muscle { fill: #e2e8f0; stroke: #64748b; stroke-width: 2; transition: all 0.15s ease; cursor: pointer; outline: none; }
-        .muscle-deep { fill: rgba(203, 213, 225, 0.5); stroke: #475569; stroke-width: 2; stroke-dasharray: 4, 3; transition: all 0.15s ease; cursor: pointer; outline: none; }
+        .muscle { fill: #e2e8f0; stroke: #64748b; stroke-width: 2; transition: all 0.15s ease; cursor: pointer; outline: none; -webkit-tap-highlight-color: transparent; }
+        .muscle-deep { fill: rgba(203, 213, 225, 0.5); stroke: #475569; stroke-width: 2; stroke-dasharray: 4, 3; transition: all 0.15s ease; cursor: pointer; outline: none; -webkit-tap-highlight-color: transparent; }
         
         @media (hover: hover) {
           .muscle:hover, .muscle-deep:hover { stroke-width: 3; }
@@ -406,7 +406,7 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
 
       {hoveredNode && (
         <div
-          className="fixed bg-slate-900/95 text-white px-3 py-1.5 rounded-lg text-sm font-medium pointer-events-none z-[100] shadow-md whitespace-nowrap"
+          className="fixed bg-slate-900/95 dark:bg-slate-50/95 text-white dark:text-slate-900 px-3 py-1.5 rounded-lg text-sm font-medium pointer-events-none z-[100] shadow-md whitespace-nowrap"
           style={{ left: hoveredNode.x, top: hoveredNode.y - 30, transform: "translate(-50%, -100%)" }}
         >
           {hoveredNode.name} {hoveredNode.level > 0 && `(${PAIN_LABEL[hoveredNode.level]})`}
@@ -416,30 +416,35 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
       {/* Toolbar & Legend */}
       <div className="flex flex-col w-full mb-4 gap-3">
         <div className="flex justify-between items-center px-1">
-          <p className="text-sm font-bold text-slate-500">📌 부위 클릭 (경도 ➔ 중등도 ➔ 중증 ➔ 취소)</p>
+          <p className="text-sm font-bold text-slate-500 dark:text-slate-400">📌 부위 클릭 (경도 ➔ 중등도 ➔ 중증 ➔ 취소)</p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-          <span className="flex items-center gap-1.5"><span className="w-3.5 h-3.5 rounded-sm bg-[#e2e8f0] border border-[#64748b]"></span> 정상</span>
+        <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
+          <span className="flex items-center gap-1.5"><span className="w-3.5 h-3.5 rounded-sm bg-[#e2e8f0] dark:bg-[#334155] border border-[#64748b] dark:border-[#475569]"></span> 정상</span>
           <span className="flex items-center gap-1.5"><span className="w-3.5 h-3.5 rounded-sm bg-[#fde047] border border-[#ca8a04]"></span> 경도(1)</span>
           <span className="flex items-center gap-1.5"><span className="w-3.5 h-3.5 rounded-sm bg-[#f97316] border border-[#c2410c]"></span> 중등도(2)</span>
           <span className="flex items-center gap-1.5"><span className="w-3.5 h-3.5 rounded-sm bg-[#ef4444] border border-[#991b1b]"></span> 중증(3)</span>
-          <span className="text-slate-400 ml-auto hidden sm:inline">· 점선 = 심부근육</span>
+          <span className="text-slate-400 dark:text-slate-500 ml-auto hidden sm:inline">· 점선 = 심부근육</span>
         </div>
       </div>
 
       {/* Diagram Container */}
       <div 
-        className="w-full grid grid-cols-1 md:grid-cols-2 gap-4"
+        className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 select-none"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerOut={handlePointerOut}
-        style={{ touchAction: magnify?.active ? "none" : "auto" }}
+        style={{ 
+          touchAction: magnify?.active ? "none" : "auto",
+          WebkitTouchCallout: "none",
+          WebkitUserSelect: "none",
+          userSelect: "none"
+        }}
       >
         {/* Anterior View */}
-        <div className="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-2 overflow-hidden flex flex-col items-center">
-          <h2 className="absolute top-4 left-4 font-bold text-slate-300 tracking-widest uppercase text-xs">
+        <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-slate-200 dark:border-gray-700 p-2 overflow-hidden flex flex-col items-center">
+          <h2 className="absolute top-4 left-4 font-bold text-slate-300 dark:text-slate-600 tracking-widest uppercase text-xs">
             Anterior
           </h2>
           <svg ref={svgAntRef} viewBox="0 0 500 950" className="w-full h-auto mt-4 drop-shadow-sm select-none" aria-label="전면부 해부도">
@@ -452,8 +457,8 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
         </div>
 
         {/* Posterior View */}
-        <div className="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-2 overflow-hidden flex flex-col items-center">
-          <h2 className="absolute top-4 left-4 font-bold text-slate-300 tracking-widest uppercase text-xs">
+        <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-slate-200 dark:border-gray-700 p-2 overflow-hidden flex flex-col items-center">
+          <h2 className="absolute top-4 left-4 font-bold text-slate-300 dark:text-slate-600 tracking-widest uppercase text-xs">
             Posterior
           </h2>
           <svg ref={svgPostRef} viewBox="0 0 500 950" className="w-full h-auto mt-4 drop-shadow-sm select-none" aria-label="후면부 해부도">
@@ -467,10 +472,10 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
       </div>
 
       {/* Summary Chips */}
-      <div className="w-full mt-4 bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-        <div className="text-sm font-bold text-slate-800 mb-3 flex items-center justify-between">
+      <div className="w-full mt-4 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 p-4 shadow-sm">
+        <div className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={18} className="text-indigo-600" />
+            <CheckCircle2 size={18} className="text-indigo-600 dark:text-indigo-400" />
             기록된 부위 ({records.length})
           </div>
           {records.length > 0 && (
@@ -490,11 +495,11 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
             records.map(([name, level]) => {
               const color = SEVERITY_COLOR[level];
               return (
-                <div key={name} className="flex items-center justify-between bg-slate-50 border border-slate-100 px-3 py-2 rounded-lg text-sm">
+                <div key={name} className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-gray-700 px-3 py-2 rounded-lg text-sm">
                   <div className="flex items-center gap-2">
                     <span className={`w-3 h-3 rounded-full border ${color.tw}`}></span>
-                    <span className="font-semibold text-slate-700">{name}</span>
-                    <span className="text-xs text-slate-500">({PAIN_LABEL[level]})</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-200">{name}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">({PAIN_LABEL[level]})</span>
                   </div>
                   <button 
                     type="button" 
@@ -521,7 +526,7 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
           />
           <div 
             id="magnifier-overlay"
-            className="fixed z-[160] w-48 h-48 rounded-full border-4 border-indigo-500 bg-white shadow-[0_10px_40px_rgba(0,0,0,0.3)] flex items-center justify-center overflow-hidden pointer-events-auto select-none"
+            className="fixed z-[160] w-48 h-48 rounded-full border-4 border-indigo-500 bg-white dark:bg-gray-800 shadow-[0_10px_40px_rgba(0,0,0,0.3)] flex items-center justify-center overflow-hidden pointer-events-auto select-none"
             style={{ 
               left: magnify.x, 
               top: magnify.y - 140, // offset above finger
@@ -680,7 +685,7 @@ export default function BodyDiagram({ painAreas: ext, setPainAreas: setExt }: Bo
             </div>
 
             {/* Target Label overlay */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-900/90 text-white px-4 py-1.5 rounded-full text-sm whitespace-nowrap font-bold pointer-events-none shadow-lg border border-slate-700">
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-slate-900/90 dark:bg-slate-50/90 text-white dark:text-slate-900 px-4 py-1.5 rounded-full text-sm whitespace-nowrap font-bold pointer-events-none shadow-lg border border-slate-700 dark:border-slate-300">
               {magnify.targetName || "부위를 선택하세요"}
               {magnify.targetName && areas[magnify.targetName] ? (
                 <span className="ml-1 text-yellow-400">

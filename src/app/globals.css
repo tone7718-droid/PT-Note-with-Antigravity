@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -31,20 +33,18 @@
   --input: #e2e8f0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a;
-    --foreground: #f8fafc;
-    
-    --card: #1e293b;
-    --card-foreground: #f8fafc;
+.dark {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  
+  --card: #1e293b;
+  --card-foreground: #f1f5f9;
 
-    --primary: #fafafa;
-    --primary-foreground: #09090b;
+  --primary: #f1f5f9;
+  --primary-foreground: #0f172a;
 
-    --border: #334155;
-    --input: #334155;
-  }
+  --border: #334155;
+  --input: #334155;
 }
 
 body {
@@ -62,11 +62,9 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-@media (prefers-color-scheme: dark) {
-  .glass {
-    background: rgba(30, 41, 59, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
+.dark .glass {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Print Specific Styles */
