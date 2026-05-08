@@ -63,7 +63,7 @@ function HomeContent() {
   return (
     <div className="flex flex-col lg:flex-row h-[100dvh] bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 overflow-hidden font-sans print:h-auto print:overflow-visible print:block">
       {/* Mobile Header */}
-      <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm z-20 shrink-0 print:hidden">
+      <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm z-20 shrink-0 print:hidden relative">
         <button
           onClick={() => setIsMobileMenuOpen(true)}
           className="p-2 -ml-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
@@ -71,7 +71,7 @@ function HomeContent() {
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
         </button>
-        <span className="font-black text-lg tracking-tight dark:text-white">PT NOTE</span>
+        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-black text-lg tracking-tight dark:text-white pointer-events-none">PT NOTE</span>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
