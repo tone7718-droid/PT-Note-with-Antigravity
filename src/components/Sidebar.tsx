@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useNoteStore } from "@/store/useNoteStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Menu, Search, User, LogOut, Plus, Trash2, UserPlus, LogIn, ChevronDown, ChevronRight, ArrowRightLeft, Shield, Download, Upload, Copy, Filter, Calendar, ListFilter, SortAsc, SortDesc, TrendingUp } from "lucide-react";
@@ -104,38 +104,42 @@ export default function Sidebar() {
   const isMaster = therapist?.role === "master";
 
   /* 현재 로그인된 치료사의 노트만 표시 (master는 전체, 단 퇴사자 노트는 폴더에서만) */
-  const visibleNotes = notes.filter((n) => {
-    if (isMaster) {
-      const isResigned = therapists.some((t) => t.resigned && t.uid === n.therapistUid);
-      return !isResigned;
-    }
-    if (therapist) return n.therapistUid === therapist.uid || !n.therapistUid;
-    return true;
-  });
-
-  const filteredNotes = visibleNotes
-    .filter((n) => {
-      // 검색어 필터
-      const matchesSearch = n.patientName.includes(search) ||
-        n.diagnosis.includes(search) ||
-        n.chartNo.includes(search);
-      
-      // 치료사 필터 (Master 전용)
-      const matchesTherapist = filterTherapist === "all" || n.therapistUid === filterTherapist;
-      
-      // 날짜 필터
-      const noteDate = new Date(n.noteDate || n.savedAt || 0).getTime();
-      const matchesStartDate = !filterStartDate || noteDate >= new Date(filterStartDate).getTime();
-      const matchesEndDate = !filterEndDate || noteDate <= new Date(filterEndDate).getTime() + 86400000; // include full day
-      
-      return matchesSearch && matchesTherapist && matchesStartDate && matchesEndDate;
-    })
-    .sort((a, b) => {
-      if (sortBy === "newest") return new Date(b.savedAt || 0).getTime() - new Date(a.savedAt || 0).getTime();
-      if (sortBy === "oldest") return new Date(a.savedAt || 0).getTime() - new Date(b.savedAt || 0).getTime();
-      if (sortBy === "patientName") return (a.patientName || "").localeCompare(b.patientName || "");
-      return 0;
+  const visibleNotes = useMemo(() => {
+    return notes.filter((n) => {
+      if (isMaster) {
+        const isResigned = therapists.some((t) => t.resigned && t.uid === n.therapistUid);
+        return !isResigned;
+      }
+      if (therapist) return n.therapistUid === therapist.uid || !n.therapistUid;
+      return true;
     });
+  }, [notes, isMaster, therapists, therapist]);
+
+  const filteredNotes = useMemo(() => {
+    return visibleNotes
+      .filter((n) => {
+        // 검색어 필터
+        const matchesSearch = n.patientName.includes(search) ||
+          n.diagnosis.includes(search) ||
+          n.chartNo.includes(search);
+        
+        // 치료사 필터 (Master 전용)
+        const matchesTherapist = filterTherapist === "all" || n.therapistUid === filterTherapist;
+        
+        // 날짜 필터
+        const noteDate = new Date(n.noteDate || n.savedAt || 0).getTime();
+        const matchesStartDate = !filterStartDate || noteDate >= new Date(filterStartDate).getTime();
+        const matchesEndDate = !filterEndDate || noteDate <= new Date(filterEndDate).getTime() + 86400000; // include full day
+        
+        return matchesSearch && matchesTherapist && matchesStartDate && matchesEndDate;
+      })
+      .sort((a, b) => {
+        if (sortBy === "newest") return new Date(b.savedAt || 0).getTime() - new Date(a.savedAt || 0).getTime();
+        if (sortBy === "oldest") return new Date(a.savedAt || 0).getTime() - new Date(b.savedAt || 0).getTime();
+        if (sortBy === "patientName") return (a.patientName || "").localeCompare(b.patientName || "");
+        return 0;
+      });
+  }, [visibleNotes, search, filterTherapist, filterStartDate, filterEndDate, sortBy]);
 
   const resignedGroups = getResignedTherapistNotes();
   const activeTherapists = therapists.filter((t) => !t.resigned && t.role !== "master");
