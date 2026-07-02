@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { NoteData } from "@/types";
+import { NoteDataSchema, type NoteData, type TherapistRecord } from "@/types";
 import * as ds from "@/lib/localDataService"; // 로컬 전환용
 import { useAuthStore } from "./useAuthStore";
 
@@ -7,10 +7,9 @@ interface NoteStore {
   notes: NoteData[];
   selectedNoteId: string | null;
   pendingDuplicate: Omit<NoteData, "id" | "savedAt"> | null;
-  hasLocalData: boolean;
   isLoading: boolean;
   error: string | null;
-  
+
   selectNote: (id: string | null) => void;
   createNewNote: () => void;
   duplicateNote: (id: string) => void;
@@ -21,15 +20,16 @@ interface NoteStore {
   transferNotes: (fromUid: string, toUid: string, toName: string, toLoginId: string | null) => Promise<void>;
   exportData: () => Promise<string>;
   importData: (json: string) => Promise<{ notesCount: number; therapistsCount: number }>;
-  checkLocalData: () => void;
   initSync: () => void;
 }
+
+const bySavedAtDesc = (a: NoteData, b: NoteData) =>
+  new Date(b.savedAt || 0).getTime() - new Date(a.savedAt || 0).getTime();
 
 export const useNoteStore = create<NoteStore>((set, get) => ({
   notes: [],
   selectedNoteId: null,
   pendingDuplicate: null,
-  hasLocalData: false,
   isLoading: false,
   error: null,
 
@@ -39,7 +39,7 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
   duplicateNote: (id) => {
     const note = get().notes.find((n) => n.id === id);
     if (!note) return;
-    // Copy clinical data, reset patient info and identity
+    // 임상 데이터는 유지하고 작성일/담당 치료사만 초기화
     const duplicated: Omit<NoteData, "id" | "savedAt"> = {
       patientName: note.patientName,
       chartNo: note.chartNo,
@@ -65,23 +65,9 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
 
   clearPendingDuplicate: () => set({ pendingDuplicate: null }),
 
-  checkLocalData: () => {
-    if (typeof window !== "undefined") {
-      try {
-        const localNotes = localStorage.getItem("progressNotes");
-        const localTherapists = localStorage.getItem("pt_therapists");
-        if ((localNotes && localNotes !== "[]") || (localTherapists && localTherapists !== "[]")) {
-          set({ hasLocalData: true });
-        }
-      } catch (err) {
-        console.warn("[init] localStorage access failed:", err);
-      }
-    }
-  },
-
   initSync: () => {
     // Auth 상태 리스너 등록
-    const { data: { subscription } } = ds.onAuthStateChange(async (t) => {
+    ds.onAuthStateChange(async (t) => {
       useAuthStore.getState().setTherapist(t);
       if (t) {
         set({ isLoading: true });
@@ -118,19 +104,20 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
 
   saveNote: async (data, existingId) => {
     const now = new Date().toISOString();
-    const noteToSave: NoteData = existingId
-      ? { ...data, id: existingId, savedAt: now }
-      : { ...data, id: `note-${Date.now()}`, savedAt: now };
+    const noteToSave: NoteData = {
+      ...data,
+      id: existingId || `note-${Date.now()}`,
+      savedAt: now,
+    };
 
-    // Optimistic Update
+    // Optimistic Update — 목록에 있으면 교체, 없으면 추가.
+    // selectedNoteId는 건드리지 않는다 (폼이 저장 완료 후 직접 동기화).
     set((state) => {
-      const updated = existingId
-        ? state.notes.map((n) => (n.id === existingId ? noteToSave : n))
+      const exists = state.notes.some((n) => n.id === noteToSave.id);
+      const updated = exists
+        ? state.notes.map((n) => (n.id === noteToSave.id ? noteToSave : n))
         : [noteToSave, ...state.notes];
-      return { 
-        notes: updated.sort((a, b) => new Date(b.savedAt || 0).getTime() - new Date(a.savedAt || 0).getTime()),
-        selectedNoteId: noteToSave.id || null
-      };
+      return { notes: updated.sort(bySavedAtDesc) };
     });
 
     try {
@@ -138,7 +125,7 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
       set((state) => ({
         notes: state.notes
           .map((n) => (n.id === saved.id ? saved : n))
-          .sort((a, b) => new Date(b.savedAt || 0).getTime() - new Date(a.savedAt || 0).getTime())
+          .sort(bySavedAtDesc),
       }));
       return saved;
     } catch (err) {
@@ -186,10 +173,23 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
     const data = JSON.parse(json);
     if (!data.notes || !Array.isArray(data.notes)) throw new Error("잘못된 데이터 형식입니다.");
 
-    const notesCount = await ds.importNotes(data.notes);
+    // 스키마 검증 — 필수 필드가 깨진 노트는 걸러내 앱 크래시를 방지
+    const validNotes = (data.notes as unknown[]).flatMap((raw) => {
+      const parsed = NoteDataSchema.safeParse(raw);
+      return parsed.success ? [parsed.data as NoteData] : [];
+    });
+
+    const notesCount = await ds.importNotes(validNotes);
+    const therapistsCount = Array.isArray(data.therapists)
+      ? await ds.importTherapists(data.therapists as TherapistRecord[])
+      : 0;
+
     const updatedNotes = await ds.fetchNotes();
     set({ notes: updatedNotes });
+    if (therapistsCount > 0) {
+      useAuthStore.getState().setTherapists(await ds.fetchTherapists());
+    }
 
-    return { notesCount, therapistsCount: 0 };
+    return { notesCount, therapistsCount };
   },
 }));

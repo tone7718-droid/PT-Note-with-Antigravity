@@ -3,7 +3,7 @@
 import { useState, useRef, useMemo } from "react";
 import { useNoteStore } from "@/store/useNoteStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { Menu, Search, User, LogOut, Plus, Trash2, UserPlus, LogIn, ChevronDown, ChevronRight, ArrowRightLeft, Shield, Download, Upload, Copy, Filter, Calendar, ListFilter, SortAsc, SortDesc, TrendingUp } from "lucide-react";
+import { Menu, Search, Plus, Trash2, UserPlus, LogIn, ChevronDown, ChevronRight, ArrowRightLeft, Shield, Download, Upload, Copy, Filter, TrendingUp } from "lucide-react";
 import LoginModal from "./LoginModal";
 import TherapistManagementModal from "./TherapistManagementModal";
 import PatientTrendChart from "./PatientTrendChart";
@@ -24,16 +24,6 @@ export default function Sidebar() {
   const signOut = useAuthStore((s) => s.signOut);
   const reauthenticate = useAuthStore((s) => s.reauthenticate);
 
-  const getResignedTherapistNotes = () => {
-    const resigned = therapists.filter((t) => t.resigned);
-    return resigned
-      .map((rt) => ({
-        therapistName: rt.name,
-        therapistUid: rt.uid,
-        notes: notes.filter((n) => n.therapistUid === rt.uid),
-      }))
-      .filter((g) => g.notes.length > 0);
-  };
   const [search, setSearch] = useState("");
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showTherapistModal, setShowTherapistModal] = useState(false);
@@ -84,7 +74,7 @@ export default function Sidebar() {
     reader.onload = async (ev) => {
       try {
         const result = await importData(ev.target?.result as string);
-        alert(`가져오기 완료: 노트 ${result.notesCount}건 추가됨`);
+        alert(`가져오기 완료: 노트 ${result.notesCount}건, 치료사 ${result.therapistsCount}명 추가됨`);
       } catch {
         alert("데이터 가져오기 실패: 올바른 JSON 파일인지 확인해주세요.");
       }
@@ -119,9 +109,9 @@ export default function Sidebar() {
     return visibleNotes
       .filter((n) => {
         // 검색어 필터
-        const matchesSearch = n.patientName.includes(search) ||
-          n.diagnosis.includes(search) ||
-          n.chartNo.includes(search);
+        const matchesSearch = (n.patientName || "").includes(search) ||
+          (n.diagnosis || "").includes(search) ||
+          (n.chartNo || "").includes(search);
         
         // 치료사 필터 (Master 전용)
         const matchesTherapist = filterTherapist === "all" || n.therapistUid === filterTherapist;
@@ -141,7 +131,16 @@ export default function Sidebar() {
       });
   }, [visibleNotes, search, filterTherapist, filterStartDate, filterEndDate, sortBy]);
 
-  const resignedGroups = getResignedTherapistNotes();
+  const resignedGroups = useMemo(() => {
+    return therapists
+      .filter((t) => t.resigned)
+      .map((rt) => ({
+        therapistName: rt.name,
+        therapistUid: rt.uid,
+        notes: notes.filter((n) => n.therapistUid === rt.uid),
+      }))
+      .filter((g) => g.notes.length > 0);
+  }, [therapists, notes]);
   const activeTherapists = therapists.filter((t) => !t.resigned && t.role !== "master");
 
   const handleDeleteStep1Confirm = () => {

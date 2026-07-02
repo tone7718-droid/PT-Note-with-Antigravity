@@ -44,3 +44,6 @@ next-env.d.ts
 /dist/
 .tmp.driveupload/
 
+# 로컬 참고 자료 (git 추적 안 함)
+물리치료 환자 평가지.pdf
+

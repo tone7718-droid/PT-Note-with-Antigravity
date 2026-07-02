@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useForm, FormProvider, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNoteStore } from "@/store/useNoteStore";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -15,10 +15,14 @@ import { ClinicalSections } from "./features/note-form/ClinicalSections";
 import MacroSettingsModal from "./MacroSettingsModal";
 import { useMacroStore } from "@/store/useMacroStore";
 
+const emptyRomRow = () => ({ joint: "", measuredROM: "", normalRange: "" });
+const todayStr = () => new Date().toISOString().split("T")[0];
+
 export default function ProgressNoteForm() {
   const selectedNoteId = useNoteStore((s) => s.selectedNoteId);
   const notes = useNoteStore((s) => s.notes);
   const saveNote = useNoteStore((s) => s.saveNote);
+  const selectNote = useNoteStore((s) => s.selectNote);
   const therapist = useAuthStore((s) => s.therapist);
   const loadMacros = useMacroStore((s) => s.loadMacros);
 
@@ -27,7 +31,7 @@ export default function ProgressNoteForm() {
     resolver: zodResolver(NoteDataSchema),
   });
 
-  const { handleSubmit, reset, watch } = methods;
+  const { handleSubmit, reset, watch, getValues } = methods;
 
   const [showSaved, setShowSaved] = useState(false);
   const [currentNoteId, setCurrentNoteId] = useState<string | null>(null);
@@ -42,67 +46,123 @@ export default function ProgressNoteForm() {
   const pendingDuplicate = useNoteStore((s) => s.pendingDuplicate);
   const clearPendingDuplicate = useNoteStore((s) => s.clearPendingDuplicate);
 
+  // 저장 경합/중복 저장 방지용 ref
+  // - currentNoteIdRef: setState 반영 전에도 최신 노트 id를 참조 (자동/수동 저장 경합 시 중복 생성 방지)
+  // - lastSavedSnapshotRef: 마지막으로 저장된 폼 스냅샷 — 값이 안 바뀌면 자동 저장을 걸지 않음
+  // - pendingSaveRef: 진행 중인 저장 Promise — 수동 저장이 자동 저장을 기다리도록 직렬화
+  const currentNoteIdRef = useRef<string | null>(null);
+  const lastSavedSnapshotRef = useRef<string | null>(null);
+  const pendingSaveRef = useRef<Promise<NoteData> | null>(null);
+
   // 매크로 스토어 초기화
   useEffect(() => {
     loadMacros();
   }, [loadMacros]);
 
   // 현재 값 구독 (하단 서명 및 토스트, 자동 저장용)
+  // watch()는 렌더마다 새 객체를 반환하므로 effect 의존성으로는 직렬화한 스냅샷을 사용
   const formData = watch();
   const patientName = formData.patientName;
-  const noteDate = formData.noteDate;
+  const formSnapshot = JSON.stringify(formData);
 
-  // 자동 임시 저장 (Auto-save: 5초 디바운스)
-  useEffect(() => {
-    if (!formData.patientName || !formData.diagnosis) return; // 필수 항목이 없으면 자동 저장 안 함
-
-    const timer = setTimeout(() => {
-      const effectiveNoteDate = formData.noteDate || new Date().toISOString().split("T")[0];
-      const dataToSave = { ...formData, noteDate: effectiveNoteDate };
-      dataToSave.rom = dataToSave.rom?.filter(r => r.joint.trim() !== "") || [];
-      
+  const runSave = useCallback(
+    async (data: NoteData, snapshot: string): Promise<NoteData> => {
       const payload = {
-        ...dataToSave,
+        ...data,
+        noteDate: data.noteDate || todayStr(),
+        rom: data.rom?.filter((r) => r.joint.trim() !== "") || [],
         therapist: therapist || savedTherapist,
         therapistUid: therapist?.uid || savedTherapist?.uid || "",
       };
 
-      saveNote(payload, currentNoteId).then((saved) => {
-        if (!currentNoteId && saved.id) {
-          setCurrentNoteId(saved.id);
+      const savePromise = (async () => {
+        // 진행 중인 저장이 있으면 완료를 기다려 같은 노트가 두 번 생성되지 않게 함
+        if (pendingSaveRef.current) {
+          await pendingSaveRef.current.catch(() => {});
         }
-        setLastAutoSaved(new Date());
-      }).catch(console.error);
+        return saveNote(payload, currentNoteIdRef.current);
+      })();
+
+      pendingSaveRef.current = savePromise;
+      try {
+        const saved = await savePromise;
+        lastSavedSnapshotRef.current = snapshot;
+        if (saved.id) {
+          currentNoteIdRef.current = saved.id;
+          setCurrentNoteId(saved.id);
+          selectNote(saved.id); // 사이드바 하이라이트 동기화
+        }
+        setSavedTherapist(saved.therapist ?? null);
+        return saved;
+      } finally {
+        if (pendingSaveRef.current === savePromise) {
+          pendingSaveRef.current = null;
+        }
+      }
+    },
+    [therapist, savedTherapist, saveNote, selectNote]
+  );
+
+  // 자동 임시 저장 (Auto-save: 5초 디바운스)
+  // 마지막 저장 스냅샷과 같으면 타이머를 걸지 않으므로, 저장이 유발한 리렌더로
+  // 저장이 무한 반복되지 않는다.
+  useEffect(() => {
+    if (formSnapshot === lastSavedSnapshotRef.current) return;
+
+    const data = JSON.parse(formSnapshot) as NoteData;
+    if (!data.patientName || !data.diagnosis) return; // 필수 항목이 없으면 자동 저장 안 함
+
+    const timer = setTimeout(() => {
+      runSave(data, formSnapshot)
+        .then(() => setLastAutoSaved(new Date()))
+        .catch(console.error);
     }, 5000);
 
     return () => clearTimeout(timer);
-  }, [formData, therapist, savedTherapist, currentNoteId, saveNote]);
+  }, [formSnapshot, runSave]);
 
   // selectedNoteId 변경 시 폼 데이터 로드 또는 리셋
+  // notes 갱신(저장 완료 등)만으로는 reset하지 않아 입력 중인 내용이 날아가지 않는다.
+  const prevSelectedRef = useRef<string | null | undefined>(undefined);
   useEffect(() => {
+    const selectionChanged = prevSelectedRef.current !== selectedNoteId;
+    if (!selectionChanged && !pendingDuplicate) return;
+    prevSelectedRef.current = selectedNoteId;
+
     if (selectedNoteId === null) {
       // pendingDuplicate가 있으면 복사된 데이터로 리셋
       if (pendingDuplicate) {
         const roms = pendingDuplicate.rom && pendingDuplicate.rom.length > 0
           ? pendingDuplicate.rom
-          : [{ joint: "", measuredROM: "", normalRange: "" }];
+          : [emptyRomRow()];
         reset({ ...pendingDuplicate, rom: roms } as NoteData);
+        currentNoteIdRef.current = null;
+        lastSavedSnapshotRef.current = null;
         setCurrentNoteId(null);
         setSavedTherapist(null);
         setIsDuplicated(true);
         clearPendingDuplicate();
         return;
       }
-      reset({ ...EMPTY_NOTE, noteDate: new Date().toISOString().split("T")[0], rom: [{ joint: "", measuredROM: "", normalRange: "" }] });
+      reset({ ...EMPTY_NOTE, noteDate: todayStr(), rom: [emptyRomRow()] });
+      currentNoteIdRef.current = null;
+      lastSavedSnapshotRef.current = null;
       setCurrentNoteId(null);
       setSavedTherapist(null);
       setIsDuplicated(false);
       return;
     }
+
+    // 자동 저장으로 id가 부여된 자기 자신의 저장 라운드트립이면 폼을 다시 로드하지 않음
+    if (selectedNoteId === currentNoteIdRef.current) return;
+
     const note = notes.find((n) => n.id === selectedNoteId);
     if (note) {
-      const roms = note.rom && note.rom.length > 0 ? note.rom : [{ joint: "", measuredROM: "", normalRange: "" }];
-      reset({ ...note, rom: roms });
+      const roms = note.rom && note.rom.length > 0 ? note.rom : [emptyRomRow()];
+      const values = { ...note, rom: roms };
+      reset(values);
+      currentNoteIdRef.current = note.id ?? null;
+      lastSavedSnapshotRef.current = JSON.stringify(values);
       setCurrentNoteId(note.id ?? null);
       setSavedTherapist(note.therapist ?? null);
       setIsDuplicated(false);
@@ -112,23 +172,10 @@ export default function ProgressNoteForm() {
   // 저장 로직
   const onSaveSubmit = async (data: NoteData) => {
     setValidationErrors([]);
-
-    const effectiveNoteDate = data.noteDate || new Date().toISOString().split("T")[0];
-    data.noteDate = effectiveNoteDate;
-    
-    // rom 빈 값 제거
-    data.rom = data.rom?.filter(r => r.joint.trim() !== "") || [];
-
-    const formData = {
-      ...data,
-      therapist: therapist || savedTherapist,
-      therapistUid: therapist?.uid || savedTherapist?.uid || "",
-    };
-
     setIsSaving(true);
     try {
-      const saved = await saveNote(formData, currentNoteId);
-      setCurrentNoteId(saved.id ?? null);
+      const snapshot = JSON.stringify(getValues());
+      await runSave(data, snapshot);
       setShowSaved(true);
       setTimeout(() => setShowSaved(false), 3000);
     } catch (err) {
@@ -139,7 +186,7 @@ export default function ProgressNoteForm() {
     }
   };
 
-  const onInvalid = (errors: any) => {
+  const onInvalid = (errors: FieldErrors<NoteData>) => {
     const errorList: string[] = [];
     if (errors.patientName) errorList.push("환자 성명");
     if (errors.diagnosis) errorList.push("진단명");
@@ -158,13 +205,13 @@ export default function ProgressNoteForm() {
       <form onSubmit={handleSubmit(onSaveSubmit, onInvalid)}>
         <div className="max-w-5xl mx-auto px-3 sm:px-10 py-6 sm:py-10 bg-gray-50/30 dark:bg-gray-900 min-h-full pb-48 scroll-smooth print:bg-white print:p-0 print:m-0 print:pb-0">
           <div className="w-full h-full">
-            
+
             {/* 타이틀 & 버튼 */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b-2 border-gray-200 dark:border-gray-800 mb-10 gap-4 print:border-transparent print:mb-6 print:pb-2">
               <h1 className="font-extrabold text-center sm:text-left tracking-tight text-3xl sm:text-4xl text-gray-900 dark:text-white print:text-3xl print:text-left print:border-b-4 print:border-gray-800 print:pb-4">
                 물리치료 환자 평가지
               </h1>
-              
+
               <div className="flex items-center gap-2 justify-center sm:justify-end hidden sm:flex print:hidden">
                 <button type="button" onClick={() => setShowMacroModal(true)} className="flex items-center gap-2 px-5 py-3 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 font-bold rounded-xl shadow-sm hover:shadow-md transition-all" aria-label="매크로 문구 등록">
                   ⚡ 매크로 등록
@@ -217,13 +264,13 @@ export default function ProgressNoteForm() {
                     <span className="text-sm text-gray-400 italic">기록 없음</span>
                   )}
                 </div>
-                
+
                 <div className="w-full mt-2">
                   <div className="w-full flex items-center justify-center italic h-16 border-b-2 border-gray-400 bg-gray-50 rounded-2xl text-gray-500 text-lg shadow-inner print:border-b-2 print:border-gray-800 print:shadow-none print:bg-transparent print:rounded-none">
                     {displayTherapist ? `${displayTherapist.name} (전자서명)` : "(서명)"}
                   </div>
                 </div>
-                
+
                 <div className="w-full flex justify-between items-center px-1 mt-4">
                   <label className="font-bold text-lg text-gray-700 print:text-base">작성 일자:</label>
                   <input type="date" className="p-2.5 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-gray-900/30 focus:border-gray-900 font-bold text-lg text-gray-800 bg-gray-50 shadow-sm print:border-none print:shadow-none print:bg-transparent print:p-0 text-right w-40"
@@ -231,7 +278,7 @@ export default function ProgressNoteForm() {
                 </div>
               </div>
             </div>
-            
+
           </div>
         </div>
 

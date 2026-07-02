@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMacroStore, type MacroEntry } from "@/store/useMacroStore";
 import { X, Save, Zap } from "lucide-react";
 
@@ -12,11 +12,8 @@ export default function MacroSettingsModal({ onClose }: MacroSettingsModalProps)
   const storeMacros = useMacroStore((s) => s.macros);
   const saveMacros = useMacroStore((s) => s.saveMacros);
 
-  const [draft, setDraft] = useState<MacroEntry[]>([]);
-
-  useEffect(() => {
-    setDraft(storeMacros.map((m) => ({ ...m })));
-  }, [storeMacros]);
+  // 모달이 열릴 때마다 새로 마운트되므로 초기값으로 스토어 상태를 복사
+  const [draft, setDraft] = useState<MacroEntry[]>(() => storeMacros.map((m) => ({ ...m })));
 
   const handleChange = (index: number, text: string) => {
     setDraft((prev) => {

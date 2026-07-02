@@ -270,3 +270,23 @@ export async function importNotes(notes: NoteData[]): Promise<number> {
   write(NOTES_KEY, [...newOnes, ...existing]);
   return newOnes.length;
 }
+
+export async function importTherapists(therapists: TherapistRecord[]): Promise<number> {
+  await ensureBootstrapMaster();
+  if (!Array.isArray(therapists) || therapists.length === 0) return 0;
+
+  const existing = read<TherapistRecord[]>(THERAPISTS_KEY, []);
+  const existingUids = new Set(existing.map((t) => t.uid));
+  const newOnes = therapists.filter(
+    (t) =>
+      t &&
+      typeof t.uid === "string" &&
+      typeof t.name === "string" &&
+      typeof t.passwordHash === "string" &&
+      !existingUids.has(t.uid)
+  );
+  if (newOnes.length === 0) return 0;
+
+  write(THERAPISTS_KEY, [...existing, ...newOnes]);
+  return newOnes.length;
+}

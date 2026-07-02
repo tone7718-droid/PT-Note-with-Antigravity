@@ -57,12 +57,15 @@ export default function PatientTrendChart({ patientName, chartNo, onClose }: Pat
     return Array.from(joints).sort();
   }, [patientNotes]);
 
+  // 선택된 관절 (미선택 시 첫 관절을 기본값으로 사용)
+  const effectiveJoint = selectedJoint || allJoints[0] || "";
+
   // ROM trend for selected joint
   const romData = useMemo(() => {
-    if (!selectedJoint) return [];
+    if (!effectiveJoint) return [];
     return patientNotes
       .map((n) => {
-        const rom = n.rom?.find((r) => r.joint === selectedJoint);
+        const rom = n.rom?.find((r) => r.joint === effectiveJoint);
         if (!rom || !rom.measuredROM) return null;
         return {
           date: formatShortDate(n.noteDate || n.savedAt || ""),
@@ -72,12 +75,7 @@ export default function PatientTrendChart({ patientName, chartNo, onClose }: Pat
         };
       })
       .filter(Boolean) as { date: string; value: number; normalRange: string; fullDate: string }[];
-  }, [patientNotes, selectedJoint]);
-
-  // Set default joint
-  if (allJoints.length > 0 && !selectedJoint) {
-    setSelectedJoint(allJoints[0]);
-  }
+  }, [patientNotes, effectiveJoint]);
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 print:hidden">
@@ -141,7 +139,7 @@ export default function PatientTrendChart({ patientName, chartNo, onClose }: Pat
                         color: "inherit"
                       }}
                       itemStyle={{ color: "inherit" }}
-                      formatter={(value: any) => [`${value}/10`, "NRS 점수"]}
+                      formatter={(value) => [`${value}/10`, "NRS 점수"]}
                     />
                     <Legend />
                     <Line
@@ -188,7 +186,7 @@ export default function PatientTrendChart({ patientName, chartNo, onClose }: Pat
                 <>
                   {/* Joint selector */}
                   <select
-                    value={selectedJoint}
+                    value={effectiveJoint}
                     onChange={(e) => setSelectedJoint(e.target.value)}
                     className="w-full p-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl text-sm font-bold bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 mb-4 focus:border-gray-900 dark:focus:border-gray-400 focus:ring-2 focus:ring-gray-900/10"
                   >
@@ -213,7 +211,7 @@ export default function PatientTrendChart({ patientName, chartNo, onClose }: Pat
                             color: "inherit"
                           }}
                           itemStyle={{ color: "inherit" }}
-                          formatter={(value: any) => [`${value}°`, selectedJoint]}
+                          formatter={(value) => [`${value}°`, effectiveJoint]}
                         />
                         <Legend />
                         <Line
@@ -223,7 +221,7 @@ export default function PatientTrendChart({ patientName, chartNo, onClose }: Pat
                           strokeWidth={3}
                           dot={{ fill: "#22c55e", strokeWidth: 2, r: 5 }}
                           activeDot={{ r: 7, fill: "#16a34a" }}
-                          name={selectedJoint}
+                          name={effectiveJoint}
                         />
                       </LineChart>
                     </ResponsiveContainer>

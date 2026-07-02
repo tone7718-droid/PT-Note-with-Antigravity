@@ -16,8 +16,6 @@ function HomeContent() {
   const isNoteLoading = useNoteStore((s) => s.isLoading);
   const isLoading = isAuthLoading || isNoteLoading;
   const initSync = useNoteStore((s) => s.initSync);
-  const checkLocalData = useNoteStore((s) => s.checkLocalData);
-  const theme = useThemeStore((s) => s.theme);
   const resolvedTheme = useThemeStore((s) => s.resolved);
   const setTheme = useThemeStore((s) => s.setTheme);
   const initTheme = useThemeStore((s) => s.init);
@@ -29,17 +27,17 @@ function HomeContent() {
   }, [initTheme]);
 
   useEffect(() => {
-    checkLocalData();
     initSync();
-  }, [checkLocalData, initSync]);
+  }, [initSync]);
 
   // Close mobile menu when a note is selected
-  const selectedNoteId = useNoteStore((s) => s.selectedNoteId);
   useEffect(() => {
-    if (isMobileMenuOpen) {
-      setIsMobileMenuOpen(false);
-    }
-  }, [selectedNoteId]);
+    return useNoteStore.subscribe((state, prev) => {
+      if (state.selectedNoteId !== prev.selectedNoteId) {
+        setIsMobileMenuOpen(false);
+      }
+    });
+  }, []);
 
   if (isLoading) {
     return (

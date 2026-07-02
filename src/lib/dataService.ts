@@ -1,3 +1,4 @@
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import {
   supabase,
   callEdgeFunction,
@@ -57,7 +58,7 @@ export async function signOut(): Promise<void> {
 }
 
 export function onAuthStateChange(callback: (therapist: Therapist | null) => void) {
-  return supabase.auth.onAuthStateChange(async (event: string, session: any) => {
+  return supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
     if (event === "SIGNED_OUT" || !session?.user) {
       setCachedAccessToken(null);
       callback(null);
@@ -240,6 +241,15 @@ export async function importNotes(notes: NoteData[]): Promise<number> {
   }
 
   return newNotes.length;
+}
+
+export async function importTherapists(therapists: TherapistRecord[]): Promise<number> {
+  // Supabase 모드에서는 치료사 계정이 Supabase Auth로 관리되므로
+  // 클라이언트에서 백업 파일로 계정을 복원할 수 없다. (Edge Function을 통해 재등록 필요)
+  if (therapists.length > 0) {
+    console.warn(`[importTherapists] Supabase 모드에서는 치료사 복원이 지원되지 않습니다 (${therapists.length}건 무시).`);
+  }
+  return 0;
 }
 
 /* ══════════════════════════════════════════
