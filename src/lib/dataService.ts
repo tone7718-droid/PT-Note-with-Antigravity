@@ -210,6 +210,16 @@ export async function updateTherapistPasswordViaAuth(newPassword: string): Promi
   if (error) throw new Error(`비밀번호 변경 실패: ${error.message}`);
 }
 
+export async function resetTherapistPasswordDb(
+  uid: string,
+  newPassword: string
+): Promise<void> {
+  void newPassword; // 클라이언트에서 타 계정 비밀번호 변경 불가 — 시그니처 호환용
+  throw new Error(
+    `치료사(${uid}) 비밀번호 재설정은 Supabase 모드에서 지원되지 않습니다. Edge Function으로 구현이 필요합니다.`
+  );
+}
+
 /* ══════════════════════════════════════════
    Export / Import
    ══════════════════════════════════════════ */
@@ -243,7 +253,12 @@ export async function importNotes(notes: NoteData[]): Promise<number> {
   return newNotes.length;
 }
 
-export async function importTherapists(therapists: TherapistRecord[]): Promise<number> {
+/** 백업 복원용 치료사 레코드 (localDataService와 시그니처 호환) */
+export type ImportableTherapist = Omit<TherapistRecord, "passwordHash"> & {
+  passwordHash?: string;
+};
+
+export async function importTherapists(therapists: ImportableTherapist[]): Promise<number> {
   // Supabase 모드에서는 치료사 계정이 Supabase Auth로 관리되므로
   // 클라이언트에서 백업 파일로 계정을 복원할 수 없다. (Edge Function을 통해 재등록 필요)
   if (therapists.length > 0) {

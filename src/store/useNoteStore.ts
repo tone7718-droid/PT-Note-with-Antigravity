@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { NoteDataSchema, type NoteData, type TherapistRecord } from "@/types";
+import { NoteDataSchema, type NoteData } from "@/types";
 import * as ds from "@/lib/localDataService"; // 로컬 전환용
 import { useAuthStore } from "./useAuthStore";
 
@@ -41,6 +41,7 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
     if (!note) return;
     // 임상 데이터는 유지하고 작성일/담당 치료사만 초기화
     const duplicated: Omit<NoteData, "id" | "savedAt"> = {
+      patientId: note.patientId, // 같은 환자의 후속 기록이므로 유지
       patientName: note.patientName,
       chartNo: note.chartNo,
       birthDate: note.birthDate,
@@ -181,7 +182,7 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
 
     const notesCount = await ds.importNotes(validNotes);
     const therapistsCount = Array.isArray(data.therapists)
-      ? await ds.importTherapists(data.therapists as TherapistRecord[])
+      ? await ds.importTherapists(data.therapists as ds.ImportableTherapist[])
       : 0;
 
     const updatedNotes = await ds.fetchNotes();

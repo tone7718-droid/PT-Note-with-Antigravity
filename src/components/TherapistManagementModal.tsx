@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { TherapistRecord } from "@/types";
-import { X, Users, Trash2, AlertCircle, ShieldCheck } from "lucide-react";
+import { X, Users, Trash2, AlertCircle, ShieldCheck, KeyRound } from "lucide-react";
 
 interface TherapistManagementModalProps {
   onClose: () => void;
@@ -14,6 +14,7 @@ export default function TherapistManagementModal({ onClose }: TherapistManagemen
   const registerTherapist = useAuthStore((s) => s.registerTherapist);
   const resignTherapist = useAuthStore((s) => s.resignTherapist);
   const deleteTherapist = useAuthStore((s) => s.deleteTherapist);
+  const resetTherapistPassword = useAuthStore((s) => s.resetTherapistPassword);
   const currentTherapist = useAuthStore((s) => s.therapist);
   const [activeTab, setActiveTab] = useState<"register" | "list">("register");
 
@@ -34,6 +35,14 @@ export default function TherapistManagementModal({ onClose }: TherapistManagemen
   const [deletingTherapist, setDeletingTherapist] = useState<TherapistRecord | null>(null);
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
+
+  /* 비밀번호 재설정 (master 전용) */
+  const [resettingTherapist, setResettingTherapist] = useState<TherapistRecord | null>(null);
+  const [resetPw, setResetPw] = useState("");
+  const [resetError, setResetError] = useState("");
+  const [resetting, setResetting] = useState(false);
+
+  const isMaster = currentTherapist?.role === "master";
 
   const activeTherapists = therapists.filter((t) => !t.resigned && t.role !== "master");
   const resignedTherapists = therapists.filter((t) => t.resigned);
@@ -96,6 +105,32 @@ export default function TherapistManagementModal({ onClose }: TherapistManagemen
       setDeleteError((err as Error).message || "삭제 처리 중 오류가 발생했습니다.");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resettingTherapist) return;
+    setResetError("");
+
+    if (!isMaster) {
+      setResetError("마스터 계정만 비밀번호 재설정이 가능합니다.");
+      return;
+    }
+    if (!/^\d{4,8}$/.test(resetPw)) {
+      setResetError("비밀번호는 숫자 4~8자리여야 합니다.");
+      return;
+    }
+
+    setResetting(true);
+    try {
+      await resetTherapistPassword(resettingTherapist.uid, resetPw);
+      setResettingTherapist(null);
+      setResetPw("");
+      alert(`${resettingTherapist.name} 치료사의 비밀번호가 재설정되었습니다.`);
+    } catch (err) {
+      setResetError((err as Error).message || "비밀번호 재설정 중 오류가 발생했습니다.");
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -164,7 +199,12 @@ export default function TherapistManagementModal({ onClose }: TherapistManagemen
                           <p className="font-bold text-gray-900 dark:text-white text-lg">{t.name}</p>
                           <p className="text-sm text-gray-400 dark:text-gray-500 font-mono font-bold">{t.id}</p>
                         </div>
-                        <button onClick={() => setResigningTherapist(t)} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-colors" aria-label={`${t.name} 퇴사 처리`}><Trash2 size={16}/> 퇴사 처리</button>
+                        <div className="flex items-center gap-1">
+                          {isMaster && (
+                            <button onClick={() => { setResettingTherapist(t); setResetPw(""); setResetError(""); }} className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors" aria-label={`${t.name} 비밀번호 재설정`} title="비밀번호 재설정"><KeyRound size={16}/> 비밀번호 재설정</button>
+                          )}
+                          <button onClick={() => setResigningTherapist(t)} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-colors" aria-label={`${t.name} 퇴사 처리`}><Trash2 size={16}/> 퇴사 처리</button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -241,6 +281,33 @@ export default function TherapistManagementModal({ onClose }: TherapistManagemen
               <button onClick={() => { setDeletingTherapist(null); setDeleteError(""); }} className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-bold rounded-2xl transition-all">취소</button>
               <button onClick={handleDelete} disabled={deleting} className="flex-1 py-4 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-bold rounded-2xl transition-all shadow-lg">
                 {deleting ? "삭제 중..." : "영구 삭제"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 비밀번호 재설정 모달 (master 전용) */}
+      {resettingTherapist && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-6 mx-auto">
+              <KeyRound size={30} className="text-gray-700 dark:text-gray-300" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center text-balance">비밀번호 재설정</h3>
+            <p className="text-center text-gray-500 dark:text-gray-400 mb-6 leading-relaxed text-sm">
+              <span className="font-bold text-gray-800 dark:text-gray-200">{resettingTherapist.name} ({resettingTherapist.id})</span>의<br />새 비밀번호를 입력해주세요.
+            </p>
+            <label htmlFor="reset-pw" className="sr-only">새 비밀번호</label>
+            <input id="reset-pw" type="password" value={resetPw}
+              onChange={(e) => { setResetPw(e.target.value.replace(/\D/g, "")); setResetError(""); }}
+              placeholder="숫자 4~8자리" autoFocus
+              className="w-full p-4 border-2 border-gray-200 dark:border-gray-700 rounded-2xl focus:border-gray-900 dark:focus:border-white focus:ring-4 focus:ring-gray-900/10 dark:focus:ring-white/5 text-center font-bold tracking-widest outline-none mb-3 bg-white dark:bg-gray-900 dark:text-white" />
+            {resetError && <p className="text-red-500 dark:text-red-400 text-xs font-bold text-center mb-3">{resetError}</p>}
+            <div className="flex gap-3">
+              <button onClick={() => { setResettingTherapist(null); setResetPw(""); setResetError(""); }} className="flex-1 py-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-bold rounded-2xl transition-all">취소</button>
+              <button onClick={handleResetPassword} disabled={resetting} className="flex-1 py-4 bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-200 disabled:bg-gray-400 text-white dark:text-gray-900 font-bold rounded-2xl transition-all shadow-lg">
+                {resetting ? "재설정 중..." : "재설정"}
               </button>
             </div>
           </div>

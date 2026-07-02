@@ -71,6 +71,9 @@ export async function signIn(
 
   if (!found) throw new Error("ID 또는 비밀번호를 확인해주세요.");
   if (found.resigned) throw new Error("퇴사 처리된 계정입니다.");
+  if (!found.passwordHash) {
+    throw new Error("비밀번호가 설정되지 않은 계정입니다. 마스터에게 비밀번호 재설정을 요청하세요.");
+  }
 
   const valid = await verifyPassword(password, found.passwordHash);
   if (!valid) throw new Error("ID 또는 비밀번호를 확인해주세요.");
@@ -81,6 +84,10 @@ export async function signIn(
     name: found.name,
     role: found.role,
   };
+  // 기본 비밀번호(0000) 그대로인 master는 변경 전까지 앱 사용을 차단
+  if (found.role === "master" && (await verifyPassword(DEFAULT_MASTER_PW, found.passwordHash))) {
+    session.mustChangePassword = true;
+  }
   write(SESSION_KEY, session);
   return { therapist: session };
 }
@@ -119,28 +126,97 @@ export async function reauthenticate(
 }
 
 /* ══════════════════════════════════════════
+   환자 식별자 (patientId)
+   ══════════════════════════════════════════
+   동명이인 구분을 위해 노트마다 내부 환자 ID를 부여한다.
+   매칭 규칙: 차트번호 → 이름+생년월일 → (백필 한정) 이름 단독 → 신규 발급 */
+
+function newPatientId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `patient-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function resolvePatientId(
+  note: NoteData,
+  pool: NoteData[],
+  options: { allowNameOnly?: boolean } = {}
+): string {
+  if (note.patientId) return note.patientId;
+
+  const chartNo = note.chartNo?.trim();
+  if (chartNo) {
+    const match = pool.find((n) => n.patientId && n.chartNo?.trim() === chartNo);
+    if (match?.patientId) return match.patientId;
+  }
+
+  const name = note.patientName?.trim();
+  const birth = note.birthDate?.trim();
+  if (name && birth) {
+    const match = pool.find(
+      (n) => n.patientId && n.patientName?.trim() === name && n.birthDate?.trim() === birth
+    );
+    if (match?.patientId) return match.patientId;
+  }
+
+  // 구데이터 백필용: 기존 추이 차트가 이름 단독으로 묶던 동작 유지
+  if (options.allowNameOnly && name) {
+    const match = pool.find((n) => n.patientId && n.patientName?.trim() === name);
+    if (match?.patientId) return match.patientId;
+  }
+
+  return newPatientId();
+}
+
+let patientIdsEnsured = false;
+
+/** patientId가 없는 기존 노트에 1회 백필 */
+function ensurePatientIds(): void {
+  if (patientIdsEnsured) return;
+  patientIdsEnsured = true;
+
+  const notes = read<NoteData[]>(NOTES_KEY, []);
+  if (notes.length === 0 || notes.every((n) => n.patientId)) return;
+
+  // 먼저 기록된 노트 기준으로 그룹핑되도록 savedAt 오름차순으로 부여
+  const ordered = [...notes].sort(
+    (a, b) => new Date(a.savedAt || 0).getTime() - new Date(b.savedAt || 0).getTime()
+  );
+  for (const note of ordered) {
+    if (!note.patientId) {
+      note.patientId = resolvePatientId(note, ordered, { allowNameOnly: true });
+    }
+  }
+  write(NOTES_KEY, notes);
+}
+
+/* ══════════════════════════════════════════
    Notes CRUD
    ══════════════════════════════════════════ */
 
 export async function fetchNotes(): Promise<NoteData[]> {
+  ensurePatientIds();
   return read<NoteData[]>(NOTES_KEY, []).sort(
     (a, b) => new Date(b.savedAt || 0).getTime() - new Date(a.savedAt || 0).getTime()
   );
 }
 
 export async function upsertNote(note: NoteData): Promise<NoteData> {
+  ensurePatientIds();
   const session = read<Therapist | null>(SESSION_KEY, null);
+  const pool = read<NoteData[]>(NOTES_KEY, []);
   const enriched: NoteData = {
     ...note,
+    patientId: note.patientId || resolvePatientId(note, pool),
     therapist: note.therapist ?? session ?? undefined,
     therapistUid: note.therapistUid || session?.uid || "",
   };
 
-  const notes = read<NoteData[]>(NOTES_KEY, []);
-  const idx = notes.findIndex((n) => n.id === enriched.id);
-  if (idx >= 0) notes[idx] = enriched;
-  else notes.unshift(enriched);
-  write(NOTES_KEY, notes);
+  const idx = pool.findIndex((n) => n.id === enriched.id);
+  if (idx >= 0) pool[idx] = enriched;
+  else pool.unshift(enriched);
+  write(NOTES_KEY, pool);
   return enriched;
 }
 
@@ -245,6 +321,29 @@ export async function updateTherapistPasswordViaAuth(
     THERAPISTS_KEY,
     therapists.map((t) => (t.uid === session.uid ? { ...t, passwordHash } : t))
   );
+
+  // 기본 비밀번호 상태 해제 (새로고침 후에도 유지되도록 세션 갱신)
+  if (session.mustChangePassword) {
+    const updatedSession = { ...session };
+    delete updatedSession.mustChangePassword;
+    write(SESSION_KEY, updatedSession);
+  }
+}
+
+/** master 전용: 특정 치료사의 비밀번호를 재설정 (백업 복원 등으로 비밀번호가 없는 계정용) */
+export async function resetTherapistPasswordDb(
+  uid: string,
+  newPassword: string
+): Promise<void> {
+  const therapists = read<TherapistRecord[]>(THERAPISTS_KEY, []);
+  if (!therapists.some((t) => t.uid === uid)) {
+    throw new Error("해당 치료사를 찾을 수 없습니다.");
+  }
+  const passwordHash = await hashPassword(newPassword);
+  write(
+    THERAPISTS_KEY,
+    therapists.map((t) => (t.uid === uid ? { ...t, passwordHash } : t))
+  );
 }
 
 /* ══════════════════════════════════════════
@@ -252,10 +351,18 @@ export async function updateTherapistPasswordViaAuth(
    ══════════════════════════════════════════ */
 
 export async function exportAllData(): Promise<string> {
+  ensurePatientIds();
   const notes = read<NoteData[]>(NOTES_KEY, []);
-  const therapists = read<TherapistRecord[]>(THERAPISTS_KEY, []);
+  // 비밀번호 해시는 절대 백업에 포함하지 않는다 (v3부터 제외)
+  const therapists = read<TherapistRecord[]>(THERAPISTS_KEY, []).map((t) => ({
+    uid: t.uid,
+    id: t.id,
+    name: t.name,
+    role: t.role,
+    resigned: t.resigned,
+  }));
   return JSON.stringify(
-    { version: 2, exportedAt: new Date().toISOString(), notes, therapists },
+    { version: 3, exportedAt: new Date().toISOString(), notes, therapists },
     null,
     2
   );
@@ -263,28 +370,54 @@ export async function exportAllData(): Promise<string> {
 
 export async function importNotes(notes: NoteData[]): Promise<number> {
   if (notes.length === 0) return 0;
+  ensurePatientIds();
   const existing = read<NoteData[]>(NOTES_KEY, []);
   const existingIds = new Set(existing.map((n) => n.id));
   const newOnes = notes.filter((n) => !existingIds.has(n.id));
   if (newOnes.length === 0) return 0;
+
+  // patientId가 없는 노트에는 기존+가져오는 노트 전체를 기준으로 부여
+  const pool = [...existing, ...newOnes];
+  for (const n of newOnes) {
+    if (!n.patientId) {
+      n.patientId = resolvePatientId(n, pool, { allowNameOnly: true });
+    }
+  }
+
   write(NOTES_KEY, [...newOnes, ...existing]);
   return newOnes.length;
 }
 
-export async function importTherapists(therapists: TherapistRecord[]): Promise<number> {
+/** 백업 복원용 치료사 레코드 — 비밀번호 해시는 백업에 없으므로 선택 필드 */
+export type ImportableTherapist = Omit<TherapistRecord, "passwordHash"> & {
+  passwordHash?: string;
+};
+
+export async function importTherapists(therapists: ImportableTherapist[]): Promise<number> {
   await ensureBootstrapMaster();
   if (!Array.isArray(therapists) || therapists.length === 0) return 0;
 
   const existing = read<TherapistRecord[]>(THERAPISTS_KEY, []);
   const existingUids = new Set(existing.map((t) => t.uid));
-  const newOnes = therapists.filter(
-    (t) =>
-      t &&
-      typeof t.uid === "string" &&
-      typeof t.name === "string" &&
-      typeof t.passwordHash === "string" &&
-      !existingUids.has(t.uid)
-  );
+  const newOnes = therapists
+    .filter(
+      (t) =>
+        t &&
+        typeof t.uid === "string" &&
+        typeof t.name === "string" &&
+        t.role !== "master" && // master는 기기마다 자체 관리 (중복 master 방지)
+        !existingUids.has(t.uid)
+    )
+    // 보안상 백업의 해시는 신뢰하지 않고 항상 비밀번호 미설정 상태로 복원.
+    // 복원된 계정은 master가 '비밀번호 재설정'으로 활성화한다.
+    .map((t) => ({
+      uid: t.uid,
+      id: t.id ?? null,
+      name: t.name,
+      role: "therapist" as const,
+      resigned: !!t.resigned,
+      passwordHash: "",
+    }));
   if (newOnes.length === 0) return 0;
 
   write(THERAPISTS_KEY, [...existing, ...newOnes]);

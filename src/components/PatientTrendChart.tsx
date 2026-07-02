@@ -13,27 +13,31 @@ import {
   Legend,
 } from "recharts";
 import { X, TrendingUp, Activity } from "lucide-react";
+import { formatShortDate } from "@/lib/utils";
 
 interface PatientTrendChartProps {
+  patientId?: string;
   patientName: string;
   chartNo: string;
   onClose: () => void;
 }
 
-export default function PatientTrendChart({ patientName, chartNo, onClose }: PatientTrendChartProps) {
+export default function PatientTrendChart({ patientId, patientName, chartNo, onClose }: PatientTrendChartProps) {
   const notes = useNoteStore((s) => s.notes);
   const [activeTab, setActiveTab] = useState<"pain" | "rom">("pain");
   const [selectedJoint, setSelectedJoint] = useState<string>("");
 
   // Find all notes for the same patient
+  // patientId(내부 환자 식별자)를 우선 사용해 동명이인이 섞이지 않게 한다.
   const patientNotes = useMemo(() => {
     return notes
       .filter((n) => {
+        if (patientId) return n.patientId === patientId;
         if (chartNo) return n.chartNo === chartNo;
         return n.patientName === patientName;
       })
       .sort((a, b) => new Date(a.noteDate || a.savedAt || 0).getTime() - new Date(b.noteDate || b.savedAt || 0).getTime());
-  }, [notes, patientName, chartNo]);
+  }, [notes, patientId, patientName, chartNo]);
 
   // Pain trend data
   const painData = useMemo(() => {
@@ -67,9 +71,11 @@ export default function PatientTrendChart({ patientName, chartNo, onClose }: Pat
       .map((n) => {
         const rom = n.rom?.find((r) => r.joint === effectiveJoint);
         if (!rom || !rom.measuredROM) return null;
+        const value = parseFloat(rom.measuredROM);
+        if (Number.isNaN(value)) return null; // 숫자가 아닌 측정값은 차트에서 제외
         return {
           date: formatShortDate(n.noteDate || n.savedAt || ""),
-          value: parseFloat(rom.measuredROM),
+          value,
           normalRange: rom.normalRange,
           fullDate: n.noteDate || n.savedAt || "",
         };
@@ -90,7 +96,7 @@ export default function PatientTrendChart({ patientName, chartNo, onClose }: Pat
             {chartNo && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">차트번호: {chartNo}</p>}
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">총 {patientNotes.length}건의 기록</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-500 dark:text-gray-400">
+          <button onClick={onClose} aria-label="추이 차트 닫기" className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-500 dark:text-gray-400">
             <X size={22} />
           </button>
         </div>
@@ -245,13 +251,4 @@ export default function PatientTrendChart({ patientName, chartNo, onClose }: Pat
       </div>
     </div>
   );
-}
-
-function formatShortDate(isoStr: string): string {
-  try {
-    const d = new Date(isoStr);
-    return `${d.getMonth() + 1}/${d.getDate()}`;
-  } catch {
-    return isoStr;
-  }
 }

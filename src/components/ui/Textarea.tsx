@@ -68,7 +68,10 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       const currentVal = textareaRef.current.value;
       const newVal = currentVal.slice(0, matchStart) + macro.text + currentVal.slice(matchEnd);
 
-      // React Hook Form 호환을 위한 값 강제 설정 및 이벤트 발생
+      // React Hook Form 호환을 위한 값 강제 설정 및 native input 이벤트 발생.
+      // React가 이벤트 위임으로 이 input 이벤트를 받아 onChange(RHF 포함)를 호출하므로
+      // 별도의 수동 onChange 호출은 하지 않는다 (중복 호출 + DOM 스프레드로 만든
+      // 가짜 이벤트에는 name 등 필수 속성이 빠지는 문제가 있었음).
       const nativeValueSetter = Object.getOwnPropertyDescriptor(
         window.HTMLTextAreaElement.prototype,
         "value"
@@ -77,16 +80,6 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       if (nativeValueSetter) {
         nativeValueSetter.call(textareaRef.current, newVal);
         textareaRef.current.dispatchEvent(new Event("input", { bubbles: true }));
-        textareaRef.current.dispatchEvent(new Event("change", { bubbles: true }));
-      }
-
-      // 수동 onChange 호출 (필요한 경우)
-      if (onChange) {
-        const event = {
-          target: { ...textareaRef.current, value: newVal },
-          currentTarget: { ...textareaRef.current, value: newVal },
-        } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
-        onChange(event);
       }
 
       setShowDropdown(false);

@@ -14,11 +14,13 @@ export interface Therapist {
   id: string | null;
   name: string;
   role: "therapist" | "master";
+  mustChangePassword?: boolean; // 기본 비밀번호(0000) 상태의 master — 변경 전까지 앱 사용 차단
 }
 
 export interface NoteData {
   id?: string;
   savedAt?: string;
+  patientId?: string; // 내부 환자 식별자 (동명이인 구분용, 저장 시 자동 부여)
   patientName: string;
   chartNo: string;
   birthDate: string;
@@ -56,14 +58,15 @@ export const TherapistSchema = z.object({
 export const NoteDataSchema = z.object({
   id: z.string().optional(),
   savedAt: z.string().optional(),
+  patientId: z.string().optional(),
   patientName: z.string().min(1, "환자 성명을 입력해주세요."),
   chartNo: z.string(),
   birthDate: z.string(),
   gender: z.string(),
   diagnosis: z.string().min(1, "진단명을 입력해주세요."),
   pmh: z.string(),
-  painScore: z.number().nullable(),
-  painAreas: z.record(z.string(), z.number()),
+  painScore: z.number().min(0).max(10).nullable(),
+  painAreas: z.record(z.string(), z.number().int().min(1).max(3)),
   chiefComplaint: z.string(),
   rom: z.array(
     z.object({

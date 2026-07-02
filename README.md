@@ -18,9 +18,11 @@ npm install
 npm run dev            # 웹 (http://localhost:3000)
 npm run electron:dev   # Electron 개발 모드
 npm run electron:build # Electron 배포 빌드 (dist/)
+npm run typecheck      # TypeScript 검사
+npm run test:e2e       # Playwright E2E 테스트 (dev 서버 자동 기동)
 ```
 
-기본 마스터 계정: ID `master` / 비밀번호 `0000` (첫 로그인 후 변경 권장)
+기본 마스터 계정: ID `master` / 비밀번호 `0000` — **첫 로그인 시 비밀번호 변경이 강제됩니다.**
 
 ## 데이터 저장 방식
 
@@ -31,7 +33,8 @@ npm run electron:build # Electron 배포 빌드 (dist/)
 로컬 모드는 개인 기기에서의 단독 사용을 전제로 하며, 다음 한계가 있습니다.
 
 - **환자 의료정보가 브라우저 localStorage에 평문으로 저장됩니다.** 같은 기기·브라우저 프로필에 접근할 수 있는 사람은 개발자 도구로 로그인 없이 데이터를 열람할 수 있습니다. 로그인은 UI 수준의 보호일 뿐입니다.
-- 비밀번호는 salt 없는 SHA-256 해시로 저장되며, 내보내기(JSON 백업) 파일에 해시가 포함됩니다. 백업 파일은 안전한 곳에 보관하세요.
+- 비밀번호는 salt 없는 SHA-256 해시로 저장됩니다. 내보내기(JSON 백업)에는 비밀번호 해시가 포함되지 않지만, 환자 정보는 평문으로 담기므로 백업 파일은 안전한 곳에 보관하세요.
+- 백업에서 복원된 치료사 계정은 비밀번호가 없는 상태이며, master가 치료사 관리 > 비밀번호 재설정으로 활성화해야 로그인할 수 있습니다.
 - 공용 PC에서는 사용하지 마시고, 실제 환자 정보를 다룰 경우 기기 암호화(BitLocker/FileVault)와 OS 계정 잠금을 함께 사용하세요.
 
 위 항목들은 Supabase 모드(서버 측 인증·Row Level Security)로 전환하면 해소됩니다.

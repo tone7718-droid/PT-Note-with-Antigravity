@@ -267,7 +267,7 @@ export default function ProgressNoteForm() {
 
                 <div className="w-full mt-2">
                   <div className="w-full flex items-center justify-center italic h-16 border-b-2 border-gray-400 bg-gray-50 rounded-2xl text-gray-500 text-lg shadow-inner print:border-b-2 print:border-gray-800 print:shadow-none print:bg-transparent print:rounded-none">
-                    {displayTherapist ? `${displayTherapist.name} (전자서명)` : "(서명)"}
+                    {displayTherapist ? `${displayTherapist.name} (담당 치료사 확인)` : "(확인)"}
                   </div>
                 </div>
 

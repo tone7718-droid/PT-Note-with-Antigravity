@@ -3,6 +3,7 @@
 import Sidebar from "@/components/Sidebar";
 import ProgressNoteForm from "@/components/ProgressNoteForm";
 import LoginModal from "@/components/LoginModal";
+import ForcePasswordChangeModal from "@/components/ForcePasswordChangeModal";
 
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -12,9 +13,10 @@ import { Moon, Sun } from "lucide-react";
 
 function HomeContent() {
   const therapist = useAuthStore((s) => s.therapist);
-  const isAuthLoading = useAuthStore((s) => s.isLoading);
-  const isNoteLoading = useNoteStore((s) => s.isLoading);
-  const isLoading = isAuthLoading || isNoteLoading;
+  // 주의: 로그인 진행(isAuthLoading) 중에는 스피너로 전환하지 않는다.
+  // 전환하면 LoginModal이 언마운트→리마운트되며 로그인 실패 에러 메시지가 사라진다.
+  // (로그인 진행 표시는 LoginModal의 "인증 중..." 버튼이 담당)
+  const isLoading = useNoteStore((s) => s.isLoading);
   const initSync = useNoteStore((s) => s.initSync);
   const resolvedTheme = useThemeStore((s) => s.resolved);
   const setTheme = useThemeStore((s) => s.setTheme);
@@ -54,6 +56,15 @@ function HomeContent() {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
         <LoginModal onClose={() => {}} hideCancel />
+      </div>
+    );
+  }
+
+  // 기본 비밀번호(0000) 상태의 master — 변경 전까지 앱 사용 차단
+  if (therapist.mustChangePassword) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
+        <ForcePasswordChangeModal />
       </div>
     );
   }

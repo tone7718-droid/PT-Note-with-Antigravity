@@ -16,6 +16,7 @@ interface AuthStore {
   resignTherapist: (uid: string) => Promise<void>;
   deleteTherapist: (uid: string) => Promise<void>;
   updateTherapistPassword: (newPassword: string) => Promise<void>;
+  resetTherapistPassword: (uid: string, newPassword: string) => Promise<void>;
   setError: (err: string | null) => void;
   setLoading: (isLoading: boolean) => void;
 }
@@ -36,9 +37,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       const { therapist: t } = await ds.signIn(loginId, password);
       set({ therapist: t });
-      // 이 부분에서 fetchTherapists도 할 수 있지만 그건 noteData 연동에서 진행하거나 여기서 진행
       const fetchedTherapists = await ds.fetchTherapists();
       set({ therapists: fetchedTherapists });
+      // 로그인 직후 노트 목록 갱신 — 새로고침 없이 로그인하면 목록이 비어 있던 문제 방지
+      // (정적 import 시 useNoteStore와 순환 참조가 되므로 동적 import 사용)
+      const { useNoteStore } = await import("./useNoteStore");
+      await useNoteStore.getState().refreshNotes();
     } catch (err) {
       set({ error: (err as Error).message });
       throw err;
@@ -79,5 +83,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   updateTherapistPassword: async (newPassword) => {
     await ds.updateTherapistPasswordViaAuth(newPassword);
+  },
+
+  resetTherapistPassword: async (uid, newPassword) => {
+    await ds.resetTherapistPasswordDb(uid, newPassword);
   },
 }));

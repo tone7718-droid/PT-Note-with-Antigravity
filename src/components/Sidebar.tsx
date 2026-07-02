@@ -4,6 +4,7 @@ import { useState, useRef, useMemo } from "react";
 import { useNoteStore } from "@/store/useNoteStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Menu, Search, Plus, Trash2, UserPlus, LogIn, ChevronDown, ChevronRight, ArrowRightLeft, Shield, Download, Upload, Copy, Filter, TrendingUp } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 import LoginModal from "./LoginModal";
 import TherapistManagementModal from "./TherapistManagementModal";
 import PatientTrendChart from "./PatientTrendChart";
@@ -39,7 +40,7 @@ export default function Sidebar() {
   const [filterStartDate, setFilterStartDate] = useState<string>("");
   const [filterEndDate, setFilterEndDate] = useState<string>("");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "patientName">("newest");
-  const [trendChartData, setTrendChartData] = useState<{ patientName: string; chartNo: string } | null>(null);
+  const [trendChartData, setTrendChartData] = useState<{ patientId?: string; patientName: string; chartNo: string } | null>(null);
 
   /* ── 삭제 2단계 비밀번호 확인 ── */
   const [showPwConfirm, setShowPwConfirm] = useState(false);
@@ -202,9 +203,13 @@ export default function Sidebar() {
               <div className="absolute left-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-2 z-[60] animate-in fade-in slide-in-from-top-2 duration-150">
                 <button onClick={() => { setShowLoginModal(true); setShowDropdown(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors"><LogIn size={18} /> 로그인</button>
                 <button onClick={() => { setShowTherapistModal(true); setShowDropdown(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-400 transition-colors"><UserPlus size={18} /> 치료사 등록 / 관리</button>
-                <hr className="my-1 border-gray-100 dark:border-gray-700" />
-                <button onClick={() => { handleExportData(); setShowDropdown(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-700 dark:hover:text-purple-400 transition-colors"><Download size={18} /> 데이터 내보내기</button>
-                <button onClick={() => { fileInputRef.current?.click(); setShowDropdown(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-700 dark:hover:text-orange-400 transition-colors"><Upload size={18} /> 데이터 가져오기</button>
+                {isMaster && (
+                  <>
+                    <hr className="my-1 border-gray-100 dark:border-gray-700" />
+                    <button onClick={() => { handleExportData(); setShowDropdown(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-700 dark:hover:text-purple-400 transition-colors"><Download size={18} /> 데이터 내보내기</button>
+                    <button onClick={() => { fileInputRef.current?.click(); setShowDropdown(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-700 dark:hover:text-orange-400 transition-colors"><Upload size={18} /> 데이터 가져오기</button>
+                  </>
+                )}
               </div>
             </>
           )}
@@ -341,7 +346,7 @@ export default function Sidebar() {
                 {!isDeleteMode && note.id && (
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                     <button
-                      onClick={(e) => { e.stopPropagation(); setTrendChartData({ patientName: note.patientName, chartNo: note.chartNo }); }}
+                      onClick={(e) => { e.stopPropagation(); setTrendChartData({ patientId: note.patientId, patientName: note.patientName, chartNo: note.chartNo }); }}
                       className="shrink-0 p-1.5 rounded-lg text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
                       aria-label={`${note.patientName} 추이 보기`}
                       title="이 환자의 치료 추이 그래프 보기"
@@ -399,6 +404,7 @@ export default function Sidebar() {
       {showTherapistModal && <TherapistManagementModal onClose={() => setShowTherapistModal(false)} />}
       {trendChartData && (
         <PatientTrendChart 
+          patientId={trendChartData.patientId}
           patientName={trendChartData.patientName} 
           chartNo={trendChartData.chartNo} 
           onClose={() => setTrendChartData(null)} 
@@ -469,11 +475,4 @@ export default function Sidebar() {
       )}
     </div>
   );
-}
-
-function formatDate(isoStr: string): string {
-  try {
-    const d = new Date(isoStr);
-    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
-  } catch { return isoStr; }
 }
