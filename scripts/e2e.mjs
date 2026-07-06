@@ -338,6 +338,72 @@ const main = async () => {
     check("백필: 기존 노트에 patientId 부여", legacy.length === 2 && legacy.every((n) => !!n.patientId));
     check("백필: 같은 차트번호끼리 같은 patientId", legacy[0]?.patientId === legacy[1]?.patientId);
 
+    /* ── 11) Body Diagram: 해부학 인체도 클릭 → 통증 단계 → 저장 ── */
+    await page.click('button:has-text("새 노트 작성")');
+    await sleep(400);
+    await page.fill('input[name="patientName"]', "다이어그램");
+    await page.fill('input[name="diagnosis"]', "테스트");
+
+    // SVG는 화면에서 축소 렌더링되므로 bbox 비율로 클릭 지점 계산
+    // (대흉근 하단 — 위에 겹친 소흉근(심부)·복직근을 피하는 지점)
+    const clickAt = async (loc, fx, fy) => {
+      await loc.scrollIntoViewIfNeeded(); // mouse.click은 자동 스크롤이 없음
+      const box = await loc.boundingBox();
+      await page.mouse.click(box.x + box.width * fx, box.y + box.height * fy);
+    };
+    const pec = page.locator('svg[aria-label="전면부 해부도"] [data-name="우측 대흉근"]');
+    await clickAt(pec, 0.49, 0.73);
+    await sleep(200);
+    check("근육 클릭 1회 → 경도(pain-1)", ((await pec.getAttribute("class")) || "").includes("pain-1"));
+    check("기록된 부위 칩 갱신", await page.isVisible("text=기록된 부위 (1)"));
+
+    // 미러(좌측) 도형도 독립적으로 동작하는지
+    const pecL = page.locator('svg[aria-label="전면부 해부도"] [data-name="좌측 대흉근"]');
+    await clickAt(pecL, 0.51, 0.73);
+    await sleep(200);
+    check("미러(좌측) 근육 클릭 동작", ((await pecL.getAttribute("class")) || "").includes("pain-1"));
+    check("기록된 부위 2건", await page.isVisible("text=기록된 부위 (2)"));
+
+    await clickAt(pec, 0.49, 0.73);
+    await sleep(150);
+    await clickAt(pec, 0.49, 0.73);
+    await sleep(150);
+    check("3회 클릭 → 중증(pain-3)", ((await pec.getAttribute("class")) || "").includes("pain-3"));
+
+    await page.click('button[type="submit"]:has-text("저장")');
+    await page.waitForSelector("text=노트가 성공적으로 저장되었습니다", { timeout: 5000 });
+    await sleep(300);
+    notes = await getNotes();
+    const diagNote = notes.find((n) => n.patientName === "다이어그램");
+    check(
+      "painAreas 저장 (우측 대흉근=3, 좌측 대흉근=1)",
+      diagNote?.painAreas?.["우측 대흉근"] === 3 && diagNote?.painAreas?.["좌측 대흉근"] === 1
+    );
+
+    await clickAt(pec, 0.49, 0.73);
+    await sleep(200);
+    check("4회 클릭 → 해제", !((await pec.getAttribute("class")) || "").includes("pain-"));
+
+    /* ── 12) 기존 노트(구 도형 시절 painAreas)가 새 인체도에 올바르게 표시 ── */
+    await page.evaluate(() => {
+      const notes = JSON.parse(localStorage.getItem("pt_local_notes") || "[]");
+      notes.push({
+        id: "legacy-pain", savedAt: "2025-03-01T00:00:00.000Z", patientName: "통증호환", diagnosis: "y",
+        painScore: null, painAreas: { "좌측 상부승모근": 2, "우측 무릎뼈 (Patella)": 1 },
+        chartNo: "", birthDate: "", gender: "", pmh: "", chiefComplaint: "", rom: [],
+        postural: "", palpation: "", specialTest: "", treatment: "", homeExercise: "", noteDate: "2025-03-01",
+      });
+      localStorage.setItem("pt_local_notes", JSON.stringify(notes));
+    });
+    await page.reload();
+    await waitApp();
+    await page.click('li:has-text("통증호환")');
+    await sleep(600);
+    const trap = page.locator('svg[aria-label="후면부 해부도"] [data-name="좌측 상부승모근"]');
+    check("기존 노트 통증 부위 표시 (좌측 상부승모근 pain-2)", ((await trap.getAttribute("class")) || "").includes("pain-2"));
+    const patella = page.locator('svg[aria-label="전면부 해부도"] [data-name="우측 무릎뼈 (Patella)"]');
+    check("뼈 랜드마크 통증 표시 (우측 무릎뼈 pain-1)", ((await patella.getAttribute("class")) || "").includes("pain-1"));
+
     /* ── 콘솔 에러 ── */
     const realErrors = consoleErrors.filter(
       (e) => !e.includes("Download the React DevTools") && !e.includes("비밀번호가 설정되지 않은")
