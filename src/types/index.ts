@@ -14,7 +14,7 @@ export interface Therapist {
   id: string | null;
   name: string;
   role: "therapist" | "master";
-  mustChangePassword?: boolean; // 기본 비밀번호(0000) 상태의 master — 변경 전까지 앱 사용 차단
+  usingDefaultPassword?: boolean; // 기본 비밀번호(0000)로 로그인 중 — 변경 권장 배너용 (차단 아님)
 }
 
 export interface NoteData {

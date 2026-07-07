@@ -100,35 +100,96 @@ const main = async () => {
 
     await page.goto(BASE);
 
-    /* ── 1) master 최초 로그인 → 비밀번호 변경 강제 ── */
+    /* 자가 비밀번호 변경 헬퍼 (사이드바 상시 버튼 → 모달) */
+    const changePassword = async (current, next, confirm = next) => {
+      await page.click('button[aria-label="비밀번호 변경"]');
+      await page.waitForSelector("#pw-current", { timeout: 5000 });
+      await page.fill("#pw-current", current);
+      await page.fill("#pw-new", next);
+      await page.fill("#pw-new2", confirm);
+      await page.getByRole("button", { name: "변경하기", exact: true }).click();
+    };
+
+    /* ── 1) master/0000 로그인: 차단하지 않고 배너만 표시 ── */
     await login("master", "0000");
-    await page.waitForSelector("text=비밀번호를 변경해주세요", { timeout: 10000 });
-    check("master/0000 첫 로그인 시 비밀번호 변경 강제 모달", true);
-
-    await page.fill("#force-pw", "0000");
-    await page.fill("#force-pw2", "0000");
-    await page.click('button:has-text("비밀번호 변경")');
-    check("기본 비밀번호(0000) 재사용 거부", await page.isVisible("text=기본 비밀번호(0000)는 다시 사용할 수 없습니다"));
-
-    await page.fill("#force-pw", "1234");
-    await page.fill("#force-pw2", "1234");
-    await page.click('button:has-text("비밀번호 변경")');
     await waitApp();
-    check("비밀번호 변경 후 앱 진입", true);
+    check("master/0000 로그인 시 앱 접근 가능 (차단 없음)", true);
+    check("기본 비밀번호 경고 배너 표시", await page.isVisible("text=기본 비밀번호(0000) 사용 중"));
+    check("상시 '비밀번호 변경' 버튼 표시", await page.isVisible('button[aria-label="비밀번호 변경"]'));
 
-    // 새로고침해도 강제 모달이 다시 뜨지 않아야 함
-    await page.reload();
-    await waitApp();
-    check("변경 후 새로고침 시 강제 모달 없음", !(await page.isVisible("text=비밀번호를 변경해주세요")));
+    // 현재 비밀번호 오류 (reauthenticate는 비동기 PBKDF2 — 에러 렌더까지 대기)
+    await changePassword("wrongpw", "1234");
+    const reauthRejected = await page
+      .waitForSelector("text=현재 비밀번호가 일치하지 않습니다", { timeout: 5000 })
+      .then(() => true)
+      .catch(() => false);
+    check("현재 비밀번호 불일치 거부", reauthRejected);
+    // 확인 불일치
+    await page.fill("#pw-current", "0000");
+    await page.fill("#pw-new", "1234");
+    await page.fill("#pw-new2", "9999");
+    await page.getByRole("button", { name: "변경하기", exact: true }).click();
+    check("새 비밀번호 확인 불일치 거부", await page.isVisible("text=새 비밀번호가 서로 일치하지 않습니다"));
+    // 새 비밀번호 = 0000 거부
+    await page.fill("#pw-new", "0000");
+    await page.fill("#pw-new2", "0000");
+    await page.getByRole("button", { name: "변경하기", exact: true }).click();
+    check("새 비밀번호로 0000 거부", await page.isVisible("text=기본 비밀번호(0000)는 사용할 수 없습니다"));
+    // 성공: 0000 → 1234
+    await page.fill("#pw-new", "1234");
+    await page.fill("#pw-new2", "1234");
+    await page.getByRole("button", { name: "변경하기", exact: true }).click();
+    await page.waitForSelector("text=비밀번호가 변경되었습니다", { timeout: 5000 });
+    await sleep(1400);
+    check("비밀번호 변경 성공 후 배너 사라짐", !(await page.isVisible("text=기본 비밀번호(0000) 사용 중")));
 
-    // 재로그인: 이전 비밀번호는 거부, 새 비밀번호는 통과 + 모달 없음
+    // ★ 핵심 회귀: 연속 2회 변경 (1234 → Test!234 → 1234)
+    await changePassword("1234", "Test!234");
+    await page.waitForSelector("text=비밀번호가 변경되었습니다", { timeout: 5000 });
+    await sleep(1400);
+    check("특수문자 포함 비밀번호 변경 성공", true);
+    await changePassword("Test!234", "1234");
+    await page.waitForSelector("text=비밀번호가 변경되었습니다", { timeout: 5000 });
+    await sleep(1400);
+    check("연속 2회 이상 비밀번호 변경 가능 (핵심 버그 해결)", true);
+
+    // PBKDF2 저장 확인
+    const masterHash = (await getTherapists()).find((t) => t.id === "master")?.passwordHash || "";
+    check("비밀번호가 PBKDF2 형식으로 저장됨", masterHash.startsWith("pbkdf2$"), `(${masterHash.slice(0, 12)})`);
+
+    // 재로그인: 이전 비밀번호 거부, 새 비밀번호 통과 + 배너 없음
     await page.click('button:has-text("로그아웃")');
     await login("master", "0000");
     await sleep(700);
     check("변경 전 비밀번호(0000)로 로그인 불가", await page.isVisible("#login-id"));
     await login("master", "1234");
     await waitApp();
-    check("새 비밀번호로 로그인, 강제 모달 없음", !(await page.isVisible("text=비밀번호를 변경해주세요")));
+    check("새 비밀번호(1234)로 로그인 성공, 배너 없음", !(await page.isVisible("text=기본 비밀번호(0000) 사용 중")));
+
+    /* ── 1b) 레거시 SHA-256 해시 계정: 로그인 시 PBKDF2 자동 업그레이드 ── */
+    await page.evaluate(async () => {
+      const enc = new TextEncoder().encode("legacy99");
+      const buf = await crypto.subtle.digest("SHA-256", enc);
+      const sha = Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+      const ts = JSON.parse(localStorage.getItem("pt_local_therapists") || "[]");
+      ts.push({ uid: "legacy-t", id: "PT-009", name: "레거시", passwordHash: sha, role: "therapist", resigned: false });
+      localStorage.setItem("pt_local_therapists", JSON.stringify(ts));
+    });
+    await page.click('button:has-text("로그아웃")');
+    await login("PT-009", "legacy99");
+    await waitApp();
+    check("레거시 SHA-256 해시로 로그인 성공", true);
+    const upgraded = (await getTherapists()).find((t) => t.id === "PT-009")?.passwordHash || "";
+    check("로그인 후 PBKDF2로 자동 업그레이드", upgraded.startsWith("pbkdf2$"), `(${upgraded.slice(0, 12)})`);
+    await page.click('button:has-text("로그아웃")');
+    await login("PT-009", "legacy99");
+    await waitApp();
+    check("업그레이드 후 동일 비밀번호로 재로그인", true);
+
+    // 정리: 다운스트림 테스트를 위해 master로 복귀
+    await page.click('button:has-text("로그아웃")');
+    await login("master", "1234");
+    await waitApp();
 
     /* ── 2) 자동 저장: 1회성 + 무한 루프 없음 ── */
     await page.fill('input[name="patientName"]', "홍길동");
@@ -271,10 +332,32 @@ const main = async () => {
     check("복원 계정은 비밀번호 재설정 전 로그인 불가", true);
 
     await login("master", "0000"); // 초기화로 master가 0000으로 재생성됨
-    await page.waitForSelector("text=비밀번호를 변경해주세요", { timeout: 10000 });
-    await page.fill("#force-pw", "9999");
-    await page.fill("#force-pw2", "9999");
-    await page.click('button:has-text("비밀번호 변경")');
+    await waitApp();
+    await changePassword("0000", "9999"); // 배너 상태에서 자가 변경
+    await page.waitForSelector("text=비밀번호가 변경되었습니다", { timeout: 5000 });
+    await sleep(1400);
+
+    // 일반 치료사(PT-005) 자가 비밀번호 변경 검증
+    await page.click('button[aria-label="메뉴 열기"]');
+    await page.click('button:has-text("치료사 등록 / 관리")');
+    await page.fill("#reg-name", "자가변경");
+    await page.fill("#reg-id", "PT-005");
+    await page.fill("#reg-pw", "init01");
+    await page.click('button:has-text("등록하기")');
+    await page.waitForSelector("text=등록 완료", { timeout: 5000 });
+    await page.click('button[aria-label="모달 닫기"]');
+    await page.click('button:has-text("로그아웃")');
+    await login("PT-005", "init01");
+    await waitApp();
+    await changePassword("init01", "New@5678");
+    await page.waitForSelector("text=비밀번호가 변경되었습니다", { timeout: 5000 });
+    await sleep(1400);
+    await page.click('button:has-text("로그아웃")');
+    await login("PT-005", "New@5678");
+    await waitApp();
+    check("일반 치료사도 자가 비밀번호 변경 후 재로그인", true);
+    await page.click('button:has-text("로그아웃")');
+    await login("master", "9999");
     await waitApp();
 
     await page.click('button[aria-label="메뉴 열기"]');

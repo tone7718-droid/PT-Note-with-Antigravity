@@ -3,9 +3,10 @@
 import { useState, useRef, useMemo } from "react";
 import { useNoteStore } from "@/store/useNoteStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { Menu, Search, Plus, Trash2, UserPlus, LogIn, ChevronDown, ChevronRight, ArrowRightLeft, Shield, Download, Upload, Copy, Filter, TrendingUp } from "lucide-react";
+import { Menu, Search, Plus, Trash2, UserPlus, LogIn, ChevronDown, ChevronRight, ArrowRightLeft, Shield, Download, Upload, Copy, Filter, TrendingUp, KeyRound, AlertTriangle } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import LoginModal from "./LoginModal";
+import PasswordChangeModal from "./PasswordChangeModal";
 import TherapistManagementModal from "./TherapistManagementModal";
 import PatientTrendChart from "./PatientTrendChart";
 
@@ -28,6 +29,7 @@ export default function Sidebar() {
   const [search, setSearch] = useState("");
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showTherapistModal, setShowTherapistModal] = useState(false);
+  const [showPwChange, setShowPwChange] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -297,14 +299,29 @@ export default function Sidebar() {
       )}
 
       {therapist && (
-        <div className="px-4 pt-4 shrink-0">
-          <div className="flex items-center justify-between gap-2 text-[15px] font-bold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm w-full">
+        <div className="px-4 pt-4 shrink-0 space-y-2">
+          <div className="flex flex-col gap-2.5 text-[15px] font-bold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 px-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm w-full">
             <div className="flex items-center gap-3">
-              <div className={`${isMaster ? "bg-amber-500" : "bg-gray-800 dark:bg-gray-700"} text-white p-1.5 rounded-full`}><Shield size={16} /></div>
+              <div className={`${isMaster ? "bg-amber-500" : "bg-gray-800 dark:bg-gray-700"} text-white p-1.5 rounded-full shrink-0`}><Shield size={16} /></div>
               <span className="truncate">{therapist.name} {therapist.id && <span className="text-gray-400 dark:text-gray-500 font-mono text-xs">({therapist.id})</span>}</span>
             </div>
-            <button onClick={handleLogout} className="text-xs text-red-500 hover:text-red-700 dark:hover:text-red-400 font-bold bg-white dark:bg-gray-900 px-2.5 py-1.5 rounded-lg border border-red-100 dark:border-red-900/50 shadow-sm transition-colors">로그아웃</button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setShowPwChange(true)} aria-label="비밀번호 변경" className="flex-1 flex items-center justify-center gap-1.5 text-xs text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-bold bg-white dark:bg-gray-900 px-2.5 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
+                <KeyRound size={14} /> 비밀번호 변경
+              </button>
+              <button onClick={handleLogout} className="flex-1 flex items-center justify-center text-xs text-red-500 hover:text-red-700 dark:hover:text-red-400 font-bold bg-white dark:bg-gray-900 px-2.5 py-2 rounded-lg border border-red-100 dark:border-red-900/50 shadow-sm transition-colors">로그아웃</button>
+            </div>
           </div>
+
+          {therapist.usingDefaultPassword && (
+            <div className="flex items-start gap-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 rounded-2xl px-4 py-3">
+              <AlertTriangle size={18} className="text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-amber-800 dark:text-amber-300 leading-relaxed">기본 비밀번호(0000) 사용 중 — 변경을 권장합니다.</p>
+                <button onClick={() => setShowPwChange(true)} className="mt-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-200">지금 변경</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -402,6 +419,7 @@ export default function Sidebar() {
 
       {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}
       {showTherapistModal && <TherapistManagementModal onClose={() => setShowTherapistModal(false)} />}
+      {showPwChange && <PasswordChangeModal onClose={() => setShowPwChange(false)} />}
       {trendChartData && (
         <PatientTrendChart 
           patientId={trendChartData.patientId}

@@ -9,14 +9,13 @@
  */
 
 import type { NoteData, TherapistRecord, Therapist } from "@/types";
-import { hashPassword, verifyPassword } from "@/components/hashUtils";
+import { hashPassword, verifyPassword, isLegacyHash } from "@/components/hashUtils";
+import { DEFAULT_PASSWORD } from "./passwordPolicy";
 
 /* ── Storage Keys ── */
 const NOTES_KEY = "pt_local_notes";
 const THERAPISTS_KEY = "pt_local_therapists";
 const SESSION_KEY = "pt_local_session";
-
-const DEFAULT_MASTER_PW = "0000";
 
 /* ══════════════════════════════════════════
    Helpers
@@ -43,7 +42,7 @@ async function ensureBootstrapMaster(): Promise<void> {
   if (bootstrapped) return;
   const therapists = read<TherapistRecord[]>(THERAPISTS_KEY, []);
   if (therapists.length === 0) {
-    const masterPwHash = await hashPassword(DEFAULT_MASTER_PW);
+    const masterPwHash = await hashPassword(DEFAULT_PASSWORD);
     const master: TherapistRecord = {
       uid: "master-default",
       id: "master",
@@ -78,15 +77,24 @@ export async function signIn(
   const valid = await verifyPassword(password, found.passwordHash);
   if (!valid) throw new Error("ID 또는 비밀번호를 확인해주세요.");
 
+  // 레거시(솔트 없는 SHA-256) 해시는 로그인 성공 시 PBKDF2로 자동 업그레이드
+  if (isLegacyHash(found.passwordHash)) {
+    const upgraded = await hashPassword(password);
+    write(
+      THERAPISTS_KEY,
+      therapists.map((t) => (t.uid === found.uid ? { ...t, passwordHash: upgraded } : t))
+    );
+  }
+
   const session: Therapist = {
     uid: found.uid,
     id: found.id,
     name: found.name,
     role: found.role,
   };
-  // 기본 비밀번호(0000) 그대로인 master는 변경 전까지 앱 사용을 차단
-  if (found.role === "master" && (await verifyPassword(DEFAULT_MASTER_PW, found.passwordHash))) {
-    session.mustChangePassword = true;
+  // 기본 비밀번호(0000)로 로그인한 경우 변경 권장 배너를 위해 표시 (차단하지 않음)
+  if (password === DEFAULT_PASSWORD) {
+    session.usingDefaultPassword = true;
   }
   write(SESSION_KEY, session);
   return { therapist: session };
@@ -323,9 +331,9 @@ export async function updateTherapistPasswordViaAuth(
   );
 
   // 기본 비밀번호 상태 해제 (새로고침 후에도 유지되도록 세션 갱신)
-  if (session.mustChangePassword) {
+  if (session.usingDefaultPassword) {
     const updatedSession = { ...session };
-    delete updatedSession.mustChangePassword;
+    delete updatedSession.usingDefaultPassword;
     write(SESSION_KEY, updatedSession);
   }
 }

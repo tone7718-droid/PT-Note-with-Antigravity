@@ -3,7 +3,6 @@
 import Sidebar from "@/components/Sidebar";
 import ProgressNoteForm from "@/components/ProgressNoteForm";
 import LoginModal from "@/components/LoginModal";
-import ForcePasswordChangeModal from "@/components/ForcePasswordChangeModal";
 
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -56,15 +55,6 @@ function HomeContent() {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
         <LoginModal onClose={() => {}} hideCancel />
-      </div>
-    );
-  }
-
-  // 기본 비밀번호(0000) 상태의 master — 변경 전까지 앱 사용 차단
-  if (therapist.mustChangePassword) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
-        <ForcePasswordChangeModal />
       </div>
     );
   }

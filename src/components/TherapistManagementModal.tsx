@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { TherapistRecord } from "@/types";
 import { X, Users, Trash2, AlertCircle, ShieldCheck, KeyRound } from "lucide-react";
+import { validateNewPassword } from "@/lib/passwordPolicy";
 
 interface TherapistManagementModalProps {
   onClose: () => void;
@@ -54,7 +55,8 @@ export default function TherapistManagementModal({ onClose }: TherapistManagemen
 
     if (!name.trim()) { setRegisterError("이름을 입력해주세요."); return; }
     if (!/^PT-\d{3}$/.test(id)) { setRegisterError("ID 형식이 올바르지 않습니다 (PT-001 ~ PT-999)."); return; }
-    if (!/^\d{4,8}$/.test(password)) { setRegisterError("비밀번호는 숫자 4~8자리여야 합니다."); return; }
+    const pwErr = validateNewPassword(password);
+    if (pwErr) { setRegisterError(pwErr); return; }
 
     setRegistering(true);
     try {
@@ -116,8 +118,9 @@ export default function TherapistManagementModal({ onClose }: TherapistManagemen
       setResetError("마스터 계정만 비밀번호 재설정이 가능합니다.");
       return;
     }
-    if (!/^\d{4,8}$/.test(resetPw)) {
-      setResetError("비밀번호는 숫자 4~8자리여야 합니다.");
+    const resetPwErr = validateNewPassword(resetPw);
+    if (resetPwErr) {
+      setResetError(resetPwErr);
       return;
     }
 
@@ -173,8 +176,8 @@ export default function TherapistManagementModal({ onClose }: TherapistManagemen
                       className="w-full p-4 border-2 border-gray-100 dark:border-gray-700 rounded-2xl focus:border-gray-900 dark:focus:border-white focus:ring-4 focus:ring-gray-900/10 dark:focus:ring-white/5 transition-all font-bold text-lg outline-none bg-white dark:bg-gray-900 dark:text-white" />
                   </div>
                   <div>
-                    <label htmlFor="reg-pw" className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">비밀번호 (숫자)</label>
-                    <input id="reg-pw" type="password" value={password} onChange={(e) => setPassword(e.target.value.replace(/\D/g, ""))} placeholder="4~8자리"
+                    <label htmlFor="reg-pw" className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">비밀번호 (4~20자)</label>
+                    <input id="reg-pw" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="4~20자"
                       className="w-full p-4 border-2 border-gray-100 dark:border-gray-700 rounded-2xl focus:border-gray-900 dark:focus:border-white focus:ring-4 focus:ring-gray-900/10 dark:focus:ring-white/5 transition-all font-bold text-lg outline-none tracking-widest bg-white dark:bg-gray-900 dark:text-white" />
                   </div>
                 </div>
@@ -300,8 +303,8 @@ export default function TherapistManagementModal({ onClose }: TherapistManagemen
             </p>
             <label htmlFor="reset-pw" className="sr-only">새 비밀번호</label>
             <input id="reset-pw" type="password" value={resetPw}
-              onChange={(e) => { setResetPw(e.target.value.replace(/\D/g, "")); setResetError(""); }}
-              placeholder="숫자 4~8자리" autoFocus
+              onChange={(e) => { setResetPw(e.target.value); setResetError(""); }}
+              placeholder="4~20자 영문/숫자/특수문자" autoFocus
               className="w-full p-4 border-2 border-gray-200 dark:border-gray-700 rounded-2xl focus:border-gray-900 dark:focus:border-white focus:ring-4 focus:ring-gray-900/10 dark:focus:ring-white/5 text-center font-bold tracking-widest outline-none mb-3 bg-white dark:bg-gray-900 dark:text-white" />
             {resetError && <p className="text-red-500 dark:text-red-400 text-xs font-bold text-center mb-3">{resetError}</p>}
             <div className="flex gap-3">
