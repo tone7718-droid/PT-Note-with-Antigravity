@@ -11,6 +11,7 @@
 import type { NoteData, TherapistRecord, Therapist } from "@/types";
 import { hashPassword, verifyPassword, isLegacyHash } from "@/components/hashUtils";
 import { DEFAULT_PASSWORD } from "./passwordPolicy";
+import { snapshotBeforeDestructive, listBackups, type BackupSnapshot } from "@/lib/autoBackup";
 
 /* ── Storage Keys ── */
 const NOTES_KEY = "pt_local_notes";
@@ -230,6 +231,7 @@ export async function upsertNote(note: NoteData): Promise<NoteData> {
 
 export async function deleteNotes(ids: string[]): Promise<void> {
   const notes = read<NoteData[]>(NOTES_KEY, []);
+  await snapshotBeforeDestructive("before-delete", notes);
   write(
     NOTES_KEY,
     notes.filter((n) => !ids.includes(n.id || ""))
@@ -380,6 +382,7 @@ export async function importNotes(notes: NoteData[]): Promise<number> {
   if (notes.length === 0) return 0;
   ensurePatientIds();
   const existing = read<NoteData[]>(NOTES_KEY, []);
+  await snapshotBeforeDestructive("before-import", existing);
   const existingIds = new Set(existing.map((n) => n.id));
   const newOnes = notes.filter((n) => !existingIds.has(n.id));
   if (newOnes.length === 0) return 0;
@@ -394,6 +397,22 @@ export async function importNotes(notes: NoteData[]): Promise<number> {
 
   write(NOTES_KEY, [...newOnes, ...existing]);
   return newOnes.length;
+}
+
+export async function listAutoBackups(): Promise<BackupSnapshot[]> {
+  return listBackups();
+}
+
+export async function restoreAutoBackup(at: string): Promise<number> {
+  const snapshots = await listBackups();
+  const target = snapshots.find((snapshot) => snapshot.at === at);
+  if (!target) throw new Error("해당 백업을 찾을 수 없습니다.");
+
+  const current = read<NoteData[]>(NOTES_KEY, []);
+  await snapshotBeforeDestructive("before-restore", current);
+  write(NOTES_KEY, target.notes);
+  patientIdsEnsured = false;
+  return target.notes.length;
 }
 
 /** 백업 복원용 치료사 레코드 — 비밀번호 해시는 백업에 없으므로 선택 필드 */

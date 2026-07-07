@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { NoteDataSchema, type NoteData } from "@/types";
 import * as ds from "@/lib/localDataService"; // 로컬 전환용
+import type { BackupSnapshot } from "@/lib/autoBackup";
 import { useAuthStore } from "./useAuthStore";
 
 interface NoteStore {
@@ -20,6 +21,8 @@ interface NoteStore {
   transferNotes: (fromUid: string, toUid: string, toName: string, toLoginId: string | null) => Promise<void>;
   exportData: () => Promise<string>;
   importData: (json: string) => Promise<{ notesCount: number; therapistsCount: number }>;
+  listBackups: () => Promise<BackupSnapshot[]>;
+  restoreBackup: (at: string) => Promise<number>;
   initSync: () => void;
 }
 
@@ -192,5 +195,14 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
     }
 
     return { notesCount, therapistsCount };
+  },
+
+  listBackups: () => ds.listAutoBackups(),
+
+  restoreBackup: async (at) => {
+    const restored = await ds.restoreAutoBackup(at);
+    const updatedNotes = await ds.fetchNotes();
+    set({ notes: updatedNotes, selectedNoteId: null });
+    return restored;
   },
 }));
