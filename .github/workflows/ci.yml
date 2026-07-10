@@ -1,8 +1,7 @@
 name: CI
 
-# 푸시 / PR 마다 lint + 타입 검사 + 정적 빌드 검증.
-# (PT-Progress-Note 의 ci.yml 이식 — 유닛테스트는 Vitest 도입 후 추가 예정.
-#  Playwright E2E 는 dev 서버 기동이 필요해 별도 잡으로 분리할 것.)
+# 푸시 / PR 마다 lint + 타입 검사 + Vitest + 정적 빌드 검증.
+# (Playwright E2E 는 dev 서버 기동이 필요해 별도 잡으로 분리할 것.)
 
 on:
   push:
@@ -21,4 +20,5 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm test
       - run: npm run build

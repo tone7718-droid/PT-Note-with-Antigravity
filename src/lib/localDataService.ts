@@ -10,6 +10,8 @@
 
 import type { NoteData, TherapistRecord, Therapist } from "@/types";
 import { hashPassword, verifyPassword, isLegacyHash } from "@/components/hashUtils";
+import { encryptData, decryptData } from "./cryptoService";
+import { snapshotBeforeDestructive } from "./autoBackup";
 import { DEFAULT_PASSWORD } from "./passwordPolicy";
 
 /* ── Storage Keys ── */
@@ -34,6 +36,61 @@ function read<T>(key: string, fallback: T): T {
 function write<T>(key: string, value: T) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(key, JSON.stringify(value));
+}
+
+/* ── 환자 노트 암호화 저장 (PT-Progress-Note 에서 이식) ──
+   노트 본문은 AES-GCM 으로 암호화해 저장하고, 복호화 실패 시 원본을
+   격리 보관해 영구 소실을 막는다. therapists/session 은 평문 유지. */
+
+/** 환자 노트를 AES-GCM 암호화해서 저장 */
+async function writeNotes(notes: NoteData[]): Promise<void> {
+  if (typeof window === "undefined") return;
+  const encrypted = await encryptData(JSON.stringify(notes));
+  window.localStorage.setItem(NOTES_KEY, encrypted);
+}
+
+/**
+ * 복호화/파싱이 모두 실패한 원본을 별도 키에 격리 보관.
+ * readNotes 가 빈 배열을 반환한 뒤 사용자가 노트를 저장하면 NOTES_KEY 가
+ * 덮어써지므로, 격리해 두지 않으면 원본이 영구 소실됨 (암호화 키 손상 대비).
+ */
+function quarantineCorruptNotes(raw: string): void {
+  try {
+    window.localStorage.setItem(`${NOTES_KEY}_corrupt_${Date.now()}`, raw);
+    console.error(
+      `[localDataService] 노트 복호화 실패 — 원본을 "${NOTES_KEY}_corrupt_*" 키에 보관했습니다.`
+    );
+  } catch {
+    /* 격리 보관 실패 (쿼터 초과 등) — 앱 동작은 계속 */
+  }
+}
+
+/**
+ * 환자 노트 복호화 읽기.
+ * 기존 평문 데이터(마이그레이션 전)는 JSON 폴백으로 자동 처리.
+ * 복호화·파싱 모두 실패 시 원본을 격리 보관 후 빈 배열 반환.
+ */
+async function readNotes(): Promise<NoteData[]> {
+  if (typeof window === "undefined") return [];
+  const raw = window.localStorage.getItem(NOTES_KEY);
+  if (!raw) return [];
+  try {
+    const decrypted = await decryptData(raw);
+    return JSON.parse(decrypted) as NoteData[];
+  } catch {
+    // 암호화 전 평문 데이터 폴백 (최초 1회 마이그레이션)
+    try {
+      const plain = JSON.parse(raw);
+      if (Array.isArray(plain)) {
+        await writeNotes(plain as NoteData[]); // 즉시 암호화로 업그레이드
+        return plain as NoteData[];
+      }
+    } catch {
+      /* 아래 격리 처리로 진행 */
+    }
+    quarantineCorruptNotes(raw);
+    return [];
+  }
 }
 
 let bootstrapped = false;
@@ -177,15 +234,9 @@ function resolvePatientId(
   return newPatientId();
 }
 
-let patientIdsEnsured = false;
-
-/** patientId가 없는 기존 노트에 1회 백필 */
-function ensurePatientIds(): void {
-  if (patientIdsEnsured) return;
-  patientIdsEnsured = true;
-
-  const notes = read<NoteData[]>(NOTES_KEY, []);
-  if (notes.length === 0 || notes.every((n) => n.patientId)) return;
+/** patientId가 없는 기존 노트에 백필. 모든 노트에 있으면 no-op (idempotent). */
+async function ensurePatientIds(notes: NoteData[]): Promise<NoteData[]> {
+  if (notes.length === 0 || notes.every((n) => n.patientId)) return notes;
 
   // 먼저 기록된 노트 기준으로 그룹핑되도록 savedAt 오름차순으로 부여
   const ordered = [...notes].sort(
@@ -196,7 +247,8 @@ function ensurePatientIds(): void {
       note.patientId = resolvePatientId(note, ordered, { allowNameOnly: true });
     }
   }
-  write(NOTES_KEY, notes);
+  await writeNotes(notes);
+  return notes;
 }
 
 /* ══════════════════════════════════════════
@@ -204,16 +256,15 @@ function ensurePatientIds(): void {
    ══════════════════════════════════════════ */
 
 export async function fetchNotes(): Promise<NoteData[]> {
-  ensurePatientIds();
-  return read<NoteData[]>(NOTES_KEY, []).sort(
+  const notes = await ensurePatientIds(await readNotes());
+  return notes.sort(
     (a, b) => new Date(b.savedAt || 0).getTime() - new Date(a.savedAt || 0).getTime()
   );
 }
 
 export async function upsertNote(note: NoteData): Promise<NoteData> {
-  ensurePatientIds();
   const session = read<Therapist | null>(SESSION_KEY, null);
-  const pool = read<NoteData[]>(NOTES_KEY, []);
+  const pool = await ensurePatientIds(await readNotes());
   const enriched: NoteData = {
     ...note,
     // 같은 id 의 기존 노트가 있으면 그 patientId 를 재사용 — 폼이 patientId 를
@@ -229,16 +280,14 @@ export async function upsertNote(note: NoteData): Promise<NoteData> {
   const idx = pool.findIndex((n) => n.id === enriched.id);
   if (idx >= 0) pool[idx] = enriched;
   else pool.unshift(enriched);
-  write(NOTES_KEY, pool);
+  await writeNotes(pool);
   return enriched;
 }
 
 export async function deleteNotes(ids: string[]): Promise<void> {
-  const notes = read<NoteData[]>(NOTES_KEY, []);
-  write(
-    NOTES_KEY,
-    notes.filter((n) => !ids.includes(n.id || ""))
-  );
+  const notes = await readNotes();
+  await snapshotBeforeDestructive("before-delete", notes);
+  await writeNotes(notes.filter((n) => !ids.includes(n.id || "")));
 }
 
 export async function transferNotesRpc(
@@ -247,7 +296,7 @@ export async function transferNotesRpc(
   toName: string,
   toLoginId: string | null
 ): Promise<number> {
-  const notes = read<NoteData[]>(NOTES_KEY, []);
+  const notes = await readNotes();
   let count = 0;
   const updated = notes.map((n) => {
     if (n.therapistUid === fromUid) {
@@ -265,7 +314,7 @@ export async function transferNotesRpc(
     }
     return n;
   });
-  write(NOTES_KEY, updated);
+  await writeNotes(updated);
   return count;
 }
 
@@ -364,8 +413,7 @@ export async function resetTherapistPasswordDb(
    ══════════════════════════════════════════ */
 
 export async function exportAllData(): Promise<string> {
-  ensurePatientIds();
-  const notes = read<NoteData[]>(NOTES_KEY, []);
+  const notes = await ensurePatientIds(await readNotes());
   // 비밀번호 해시는 절대 백업에 포함하지 않는다 (v3부터 제외)
   const therapists = read<TherapistRecord[]>(THERAPISTS_KEY, []).map((t) => ({
     uid: t.uid,
@@ -383,8 +431,8 @@ export async function exportAllData(): Promise<string> {
 
 export async function importNotes(notes: NoteData[]): Promise<number> {
   if (notes.length === 0) return 0;
-  ensurePatientIds();
-  const existing = read<NoteData[]>(NOTES_KEY, []);
+  const existing = await ensurePatientIds(await readNotes());
+  await snapshotBeforeDestructive("before-import", existing);
   const existingIds = new Set(existing.map((n) => n.id));
   const newOnes = notes.filter((n) => !existingIds.has(n.id));
   if (newOnes.length === 0) return 0;
@@ -397,7 +445,7 @@ export async function importNotes(notes: NoteData[]): Promise<number> {
     }
   }
 
-  write(NOTES_KEY, [...newOnes, ...existing]);
+  await writeNotes([...newOnes, ...existing]);
   return newOnes.length;
 }
 

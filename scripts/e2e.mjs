@@ -76,8 +76,32 @@ const main = async () => {
     });
     page.on("pageerror", (err) => consoleErrors.push("PAGEERROR: " + err.message));
 
+    /* 노트는 AES-GCM 암호화 저장됨 — 평문(JSON) 폴백 후 복호화 시도.
+       (키/포맷은 src/lib/cryptoService.ts 와 동일: pt_enc_key_v1 hex, "ivHex:cipherHex") */
     const getNotes = () =>
-      page.evaluate(() => JSON.parse(localStorage.getItem("pt_local_notes") || "[]"));
+      page.evaluate(async () => {
+        const raw = localStorage.getItem("pt_local_notes");
+        if (!raw) return [];
+        try {
+          return JSON.parse(raw);
+        } catch {
+          /* encrypted — fall through */
+        }
+        const keyHex = localStorage.getItem("pt_enc_key_v1");
+        if (!keyHex) return [];
+        const hex2buf = (h) => new Uint8Array(h.match(/.{2}/g).map((b) => parseInt(b, 16)));
+        const key = await crypto.subtle.importKey(
+          "raw", hex2buf(keyHex), { name: "AES-GCM" }, false, ["decrypt"]
+        );
+        const sep = raw.indexOf(":");
+        const plain = await crypto.subtle.decrypt(
+          { name: "AES-GCM", iv: hex2buf(raw.slice(0, sep)) }, key, hex2buf(raw.slice(sep + 1))
+        );
+        return JSON.parse(new TextDecoder().decode(plain));
+      });
+    /* 시딩은 평문으로 써도 됨 — 앱의 readNotes 가 평문 폴백 후 즉시 암호화로 승격 */
+    const setNotes = (notes) =>
+      page.evaluate((n) => localStorage.setItem("pt_local_notes", JSON.stringify(n)), notes);
     const getTherapists = () =>
       page.evaluate(() => JSON.parse(localStorage.getItem("pt_local_therapists") || "[]"));
     const waitApp = () => page.waitForSelector('button:has-text("새 노트 작성")', { timeout: 15000 });
@@ -406,14 +430,14 @@ const main = async () => {
     );
 
     /* ── 10) 백필: patientId 없는 기존 노트에 자동 부여 ── */
-    await page.evaluate(() => {
-      const notes = JSON.parse(localStorage.getItem("pt_local_notes") || "[]");
-      notes.push(
+    {
+      const seeded = await getNotes();
+      seeded.push(
         { id: "legacy-1", savedAt: "2025-01-01T00:00:00.000Z", patientName: "구환자", chartNo: "OLD-1", diagnosis: "z", painScore: null, painAreas: {}, birthDate: "", gender: "", pmh: "", chiefComplaint: "", rom: [], postural: "", palpation: "", specialTest: "", treatment: "", homeExercise: "", noteDate: "2025-01-01" },
         { id: "legacy-2", savedAt: "2025-02-01T00:00:00.000Z", patientName: "구환자", chartNo: "OLD-1", diagnosis: "z", painScore: null, painAreas: {}, birthDate: "", gender: "", pmh: "", chiefComplaint: "", rom: [], postural: "", palpation: "", specialTest: "", treatment: "", homeExercise: "", noteDate: "2025-02-01" }
       );
-      localStorage.setItem("pt_local_notes", JSON.stringify(notes));
-    });
+      await setNotes(seeded);
+    }
     await page.reload();
     await waitApp();
     notes = await getNotes();
@@ -468,16 +492,16 @@ const main = async () => {
     check("4회 클릭 → 해제", !((await pec.getAttribute("class")) || "").includes("pain-"));
 
     /* ── 12) 기존 노트(구 도형 시절 painAreas)가 새 인체도에 올바르게 표시 ── */
-    await page.evaluate(() => {
-      const notes = JSON.parse(localStorage.getItem("pt_local_notes") || "[]");
-      notes.push({
+    {
+      const seeded = await getNotes();
+      seeded.push({
         id: "legacy-pain", savedAt: "2025-03-01T00:00:00.000Z", patientName: "통증호환", diagnosis: "y",
         painScore: null, painAreas: { "좌측 상부승모근": 2, "우측 무릎뼈 (Patella)": 1 },
         chartNo: "", birthDate: "", gender: "", pmh: "", chiefComplaint: "", rom: [],
         postural: "", palpation: "", specialTest: "", treatment: "", homeExercise: "", noteDate: "2025-03-01",
       });
-      localStorage.setItem("pt_local_notes", JSON.stringify(notes));
-    });
+      await setNotes(seeded);
+    }
     await page.reload();
     await waitApp();
     await page.click('li:has-text("통증호환")');
