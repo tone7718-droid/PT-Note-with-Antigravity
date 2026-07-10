@@ -216,7 +216,12 @@ export async function upsertNote(note: NoteData): Promise<NoteData> {
   const pool = read<NoteData[]>(NOTES_KEY, []);
   const enriched: NoteData = {
     ...note,
-    patientId: note.patientId || resolvePatientId(note, pool),
+    // 같은 id 의 기존 노트가 있으면 그 patientId 를 재사용 — 폼이 patientId 를
+    // 돌려받지 못한 경우에도 재저장 churn 이 발생하지 않도록 이중 방어
+    patientId:
+      note.patientId ||
+      pool.find((n) => n.id === note.id)?.patientId ||
+      resolvePatientId(note, pool),
     therapist: note.therapist ?? session ?? undefined,
     therapistUid: note.therapistUid || session?.uid || "",
   };

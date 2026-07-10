@@ -32,23 +32,23 @@ export default function MacroSettingsModal({ onClose }: MacroSettingsModalProps)
 
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* 헤더 */}
-        <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-          <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+        <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/40">
+          <h2 className="text-2xl font-black text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <Zap className="text-amber-500" size={28} /> 매크로 문구 등록
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors" aria-label="모달 닫기">
+          <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-500 dark:text-gray-400" aria-label="모달 닫기">
             <X size={24} />
           </button>
         </div>
 
         {/* 안내 */}
-        <div className="px-8 py-4 bg-amber-50 border-b border-amber-100">
-          <p className="text-sm text-amber-800 font-medium leading-relaxed">
-            각 슬롯에 자주 사용하는 문구를 등록하세요. 텍스트 입력창에서 <span className="font-bold font-mono bg-amber-100 px-1.5 py-0.5 rounded">/도수</span>를 입력하면 등록된 문구 목록이 나타나며, 선택하면 자동으로 입력됩니다.
+        <div className="px-8 py-4 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-900">
+          <p className="text-sm text-amber-800 dark:text-amber-200 font-medium leading-relaxed">
+            각 슬롯에 자주 사용하는 문구를 등록하세요. 텍스트 입력창에서 <span className="font-bold font-mono bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded">/도수</span>를 입력하면 등록된 문구 목록이 나타나며, 선택하면 자동으로 입력됩니다.
           </p>
-          <p className="text-xs text-amber-600 mt-1">
+          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
             등록된 매크로: <span className="font-bold">{filledCount}</span> / 20개
           </p>
         </div>
@@ -57,7 +57,7 @@ export default function MacroSettingsModal({ onClose }: MacroSettingsModalProps)
         <div className="flex-1 overflow-y-auto px-8 py-6 space-y-4">
           {draft.map((macro, idx) => (
             <div key={macro.key} className="flex items-start gap-4">
-              <div className="shrink-0 w-20 h-[3.25rem] flex items-center justify-center bg-gray-900 text-white font-mono font-bold text-sm rounded-xl shadow-sm">
+              <div className="shrink-0 w-20 h-[3.25rem] flex items-center justify-center bg-gray-900 dark:bg-gray-600 text-white font-mono font-bold text-sm rounded-xl shadow-sm">
                 {macro.key}
               </div>
               <div className="flex-1 relative">
@@ -66,7 +66,7 @@ export default function MacroSettingsModal({ onClose }: MacroSettingsModalProps)
                   onChange={(e) => handleChange(idx, e.target.value)}
                   placeholder={`/도수${idx + 1}에 해당하는 문구를 입력하세요...`}
                   rows={1}
-                  className="w-full p-3.5 border-2 border-gray-100 rounded-2xl focus:border-gray-900 focus:ring-4 focus:ring-gray-900/10 transition-all font-medium text-sm outline-none resize-none min-h-[3.25rem]"
+                  className="w-full p-3.5 border-2 border-gray-100 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 rounded-2xl focus:border-gray-900 dark:focus:border-gray-400 focus:ring-4 focus:ring-gray-900/10 transition-all font-medium text-sm outline-none resize-none min-h-[3.25rem]"
                   onInput={(e) => {
                     const ta = e.currentTarget;
                     ta.style.height = "auto";
@@ -77,7 +77,7 @@ export default function MacroSettingsModal({ onClose }: MacroSettingsModalProps)
                   <button
                     type="button"
                     onClick={() => handleChange(idx, "")}
-                    className="absolute top-3 right-3 text-gray-300 hover:text-red-500 transition-colors"
+                    className="absolute top-3 right-3 text-gray-300 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                     aria-label="문구 삭제"
                   >
                     <X size={16} />
@@ -89,18 +89,18 @@ export default function MacroSettingsModal({ onClose }: MacroSettingsModalProps)
         </div>
 
         {/* 하단 버튼 */}
-        <div className="px-8 py-5 border-t border-gray-100 flex items-center justify-end gap-3 bg-gray-50/50">
+        <div className="px-8 py-5 border-t border-gray-100 dark:border-gray-700 flex items-center justify-end gap-3 bg-gray-50/50 dark:bg-gray-900/40">
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-3 text-gray-600 bg-gray-100 hover:bg-gray-200 font-bold rounded-2xl transition-all"
+            className="px-6 py-3 text-gray-600 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 font-bold rounded-2xl transition-all"
           >
             취소 (Cancel)
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="flex items-center gap-2 px-8 py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-2xl shadow-lg transition-all transform hover:-translate-y-0.5"
+            className="flex items-center gap-2 px-8 py-3 bg-gray-900 dark:bg-gray-200 hover:bg-gray-800 dark:hover:bg-white text-white dark:text-gray-900 font-bold rounded-2xl shadow-lg transition-all transform hover:-translate-y-0.5"
           >
             <Save size={18} /> 저장 (Save)
           </button>

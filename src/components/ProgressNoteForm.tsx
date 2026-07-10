@@ -92,6 +92,17 @@ export default function ProgressNoteForm() {
           setCurrentNoteId(saved.id);
           selectNote(saved.id); // 사이드바 하이라이트 동기화
         }
+        // 저장 시 부여된 patientId 를 폼에 되써준다 — 차트번호·생년월일이
+        // 없는 노트가 재저장마다 새 환자로 갈라지는 것(churn) 방지.
+        // 되써주기로 폼 값이 바뀌면 자동 저장의 스냅샷 비교가 어긋나
+        // 불필요한 재저장이 발생하므로, 마지막 저장 스냅샷에도 동일 반영.
+        if (saved.patientId && data.patientId !== saved.patientId) {
+          methods.setValue("patientId", saved.patientId);
+          lastSavedSnapshotRef.current = JSON.stringify({
+            ...JSON.parse(snapshot),
+            patientId: saved.patientId,
+          });
+        }
         setSavedTherapist(saved.therapist ?? null);
         return saved;
       } finally {
@@ -100,7 +111,7 @@ export default function ProgressNoteForm() {
         }
       }
     },
-    [therapist, savedTherapist, saveNote, selectNote]
+    [therapist, savedTherapist, saveNote, selectNote, methods]
   );
 
   // 자동 임시 저장 (Auto-save: 5초 디바운스)
