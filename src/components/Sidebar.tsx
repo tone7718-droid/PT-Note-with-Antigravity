@@ -3,12 +3,13 @@
 import { useState, useRef, useMemo } from "react";
 import { useNoteStore } from "@/store/useNoteStore";
 import { useAuthStore } from "@/store/useAuthStore";
-import { Menu, Search, Plus, Trash2, UserPlus, LogIn, ChevronDown, ChevronRight, ArrowRightLeft, Shield, Download, Upload, Copy, Filter, TrendingUp, KeyRound, AlertTriangle } from "lucide-react";
+import { Menu, Search, Plus, Trash2, UserPlus, LogIn, ChevronDown, ChevronRight, ArrowRightLeft, Shield, Download, Upload, Copy, Filter, TrendingUp, KeyRound, AlertTriangle, History } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import LoginModal from "./LoginModal";
 import PasswordChangeModal from "./PasswordChangeModal";
 import TherapistManagementModal from "./TherapistManagementModal";
 import PatientTrendChart from "./PatientTrendChart";
+import BackupRestoreModal from "./BackupRestoreModal";
 
 export default function Sidebar() {
   const notes = useNoteStore((s) => s.notes);
@@ -35,6 +36,7 @@ export default function Sidebar() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showResignedFolder, setShowResignedFolder] = useState(false);
+  const [showBackupRestore, setShowBackupRestore] = useState(false);
 
   /* ── 필터 및 정렬 ── */
   const [showFilterPanel, setShowFilterPanel] = useState(false);
@@ -210,6 +212,7 @@ export default function Sidebar() {
                     <hr className="my-1 border-gray-100 dark:border-gray-700" />
                     <button onClick={() => { handleExportData(); setShowDropdown(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-700 dark:hover:text-purple-400 transition-colors"><Download size={18} /> 데이터 내보내기</button>
                     <button onClick={() => { fileInputRef.current?.click(); setShowDropdown(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-700 dark:hover:text-orange-400 transition-colors"><Upload size={18} /> 데이터 가져오기</button>
+                    <button onClick={() => { setShowBackupRestore(true); setShowDropdown(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"><History size={18} /> 자동 백업 복원</button>
                   </>
                 )}
               </div>
@@ -420,6 +423,7 @@ export default function Sidebar() {
       {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}
       {showTherapistModal && <TherapistManagementModal onClose={() => setShowTherapistModal(false)} />}
       {showPwChange && <PasswordChangeModal onClose={() => setShowPwChange(false)} />}
+      {showBackupRestore && <BackupRestoreModal onClose={() => setShowBackupRestore(false)} />}
       {trendChartData && (
         <PatientTrendChart 
           patientId={trendChartData.patientId}

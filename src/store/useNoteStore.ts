@@ -20,6 +20,8 @@ interface NoteStore {
   transferNotes: (fromUid: string, toUid: string, toName: string, toLoginId: string | null) => Promise<void>;
   exportData: () => Promise<string>;
   importData: (json: string) => Promise<{ notesCount: number; therapistsCount: number }>;
+  listBackups: () => Promise<import("@/lib/autoBackup").BackupSnapshot[]>;
+  restoreBackup: (at: string) => Promise<number>;
   initSync: () => void;
 }
 
@@ -192,5 +194,15 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
     }
 
     return { notesCount, therapistsCount };
+  },
+
+  listBackups: async () => {
+    return ds.listAutoBackups();
+  },
+
+  restoreBackup: async (at) => {
+    const restored = await ds.restoreAutoBackup(at);
+    set({ notes: await ds.fetchNotes(), selectedNoteId: null });
+    return restored;
   },
 }));

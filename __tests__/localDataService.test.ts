@@ -93,6 +93,32 @@ describe("localDataService — 자동 백업 스냅샷", () => {
     expect(backups.some((b) => b.reason === "before-import")).toBe(true);
     expect(await ds.fetchNotes()).toHaveLength(2);
   });
+
+  it("restores notes from an auto-backup snapshot (복원 직전 상태도 스냅샷)", async () => {
+    await ds.upsertNote(sampleNote({ id: "keep-1", patientName: "복원대상" }));
+    await ds.deleteNotes(["keep-1"]);
+    await ds.upsertNote(sampleNote({ id: "temp-1", patientName: "복원으로대체될노트" }));
+
+    const backups = await ds.listAutoBackups();
+    const target = backups.find((b) => b.reason === "before-delete")!;
+    const restored = await ds.restoreAutoBackup(target.at);
+
+    expect(restored).toBe(1);
+    const notes = await ds.fetchNotes();
+    expect(notes.map((n) => n.id)).toEqual(["keep-1"]);
+
+    // 복원 직전 상태(temp-1)도 before-restore 스냅샷으로 남는다
+    const after = await ds.listAutoBackups();
+    const preRestore = after[after.length - 1];
+    expect(preRestore.reason).toBe("before-restore");
+    expect(preRestore.notes.map((n) => n.id)).toEqual(["temp-1"]);
+  });
+
+  it("throws for an unknown snapshot timestamp", async () => {
+    await expect(ds.restoreAutoBackup("1999-01-01T00:00:00.000Z")).rejects.toThrow(
+      "해당 백업을 찾을 수 없습니다."
+    );
+  });
 });
 
 describe("localDataService — patientId", () => {

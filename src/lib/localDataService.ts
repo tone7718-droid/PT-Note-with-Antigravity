@@ -11,7 +11,7 @@
 import type { NoteData, TherapistRecord, Therapist } from "@/types";
 import { hashPassword, verifyPassword, isLegacyHash } from "@/components/hashUtils";
 import { encryptData, decryptData } from "./cryptoService";
-import { snapshotBeforeDestructive } from "./autoBackup";
+import { snapshotBeforeDestructive, listBackups, type BackupSnapshot } from "./autoBackup";
 import { DEFAULT_PASSWORD } from "./passwordPolicy";
 
 /* ── Storage Keys ── */
@@ -447,6 +447,27 @@ export async function importNotes(notes: NoteData[]): Promise<number> {
 
   await writeNotes([...newOnes, ...existing]);
   return newOnes.length;
+}
+
+/* ── 자동 백업 복원 ── */
+
+export async function listAutoBackups(): Promise<BackupSnapshot[]> {
+  return listBackups();
+}
+
+/**
+ * 자동 백업 스냅샷으로 전체 복원 (현재 노트를 스냅샷 내용으로 교체).
+ * 복원 직전 현재 상태를 추가 스냅샷으로 남겨 복원 자체도 되돌릴 수 있게 한다.
+ */
+export async function restoreAutoBackup(at: string): Promise<number> {
+  const snapshots = await listBackups();
+  const target = snapshots.find((s) => s.at === at);
+  if (!target) throw new Error("해당 백업을 찾을 수 없습니다.");
+
+  const current = await readNotes();
+  await snapshotBeforeDestructive("before-restore", current);
+  await writeNotes(target.notes);
+  return target.notes.length;
 }
 
 /** 백업 복원용 치료사 레코드 — 비밀번호 해시는 백업에 없으므로 선택 필드 */
