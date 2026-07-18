@@ -17,6 +17,18 @@ export interface Therapist {
   usingDefaultPassword?: boolean; // 기본 비밀번호(0000)로 로그인 중 — 변경 권장 배너용 (차단 아님)
 }
 
+/* ── 통증 부위 마킹 (PainEntry[] — 자매 앱 표준 형식) ──
+ * view(전면/후면) + region(부위명) + painLevel(1=경도, 2=중등도, 3=중증).
+ * 이전 Record<string, number> 형식은 localDataService 가 읽기 시 자동 변환. */
+export type PainView = "anterior" | "posterior";
+export type PainLevel = 1 | 2 | 3;
+
+export interface PainEntry {
+  view: PainView;
+  region: string; // 한글 부위명 (예: "우측 대흉근")
+  painLevel: PainLevel;
+}
+
 export interface NoteData {
   id?: string;
   savedAt?: string;
@@ -28,7 +40,7 @@ export interface NoteData {
   diagnosis: string;
   pmh: string;
   painScore: number | null;
-  painAreas: Record<string, number>;
+  painAreas: PainEntry[];
   chiefComplaint: string;
   rom: { joint: string; measuredROM: string; normalRange: string }[];
   postural: string;
@@ -49,7 +61,7 @@ export interface NoteData {
 
 export const EMPTY_NOTE: Omit<NoteData, "id" | "savedAt"> = {
   patientName: "", chartNo: "", birthDate: "", gender: "", diagnosis: "", pmh: "",
-  painScore: null, painAreas: {}, chiefComplaint: "", rom: [],
+  painScore: null, painAreas: [], chiefComplaint: "", rom: [],
   postural: "", palpation: "", specialTest: "", treatment: "", painScoreAfter: null,
   assessment: "", homeExercise: "", plan: "",
   noteDate: "", therapist: null, therapistUid: "",
@@ -73,7 +85,13 @@ export const NoteDataSchema = z.object({
   diagnosis: z.string().min(1, "진단명을 입력해주세요."),
   pmh: z.string(),
   painScore: z.number().min(0).max(10).nullable(),
-  painAreas: z.record(z.string(), z.number().int().min(1).max(3)),
+  painAreas: z.array(
+    z.object({
+      view: z.enum(["anterior", "posterior"]),
+      region: z.string(),
+      painLevel: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+    })
+  ),
   chiefComplaint: z.string(),
   rom: z.array(
     z.object({

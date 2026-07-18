@@ -6,8 +6,9 @@
  * supabase.ts, database.types.ts 삭제 커밋 이전)
  */
 
-import type { NoteData, TherapistRecord, Therapist } from "@/types";
+import type { NoteData, TherapistRecord, Therapist, PainEntry, PainLevel, PainView } from "@/types";
 import { hashPassword, verifyPassword, isLegacyHash } from "@/components/hashUtils";
+import { ANT_CENTER, ANT_PAIRED, POST_CENTER, POST_PAIRED } from "@/components/bodyDiagramShapes";
 import { encryptData, decryptData } from "./cryptoService";
 import { snapshotBeforeDestructive, listBackups, type BackupSnapshot } from "./autoBackup";
 import { DEFAULT_PASSWORD } from "./passwordPolicy";
@@ -261,11 +262,88 @@ async function ensurePatientIds(notes: NoteData[]): Promise<NoteData[]> {
    Notes CRUD
    ══════════════════════════════════════════ */
 
+/**
+ * painAreas 형식 정규화.
+ * 표준 형식: PainEntry[] ({view, region, painLevel}) — 자매 앱들과 공유.
+ * 구버전 Record<string, number> (부위명 → 1|2|3)는 부위명으로 view 를
+ * 역추정해 변환. 전면·후면 양쪽에 존재하는 부위명(전완·종아리 등)은
+ * 구형식에 view 정보가 없어 전면(anterior)으로 귀속 (결정적 규칙).
+ */
+const VALID_VIEWS = new Set<string>(["anterior", "posterior"]);
+
+let _regionViewMap: Map<string, PainView> | null = null;
+
+/** 부위명 → view 매핑 (도해 데이터에서 생성, 전면 우선) */
+function getRegionViewMap(): Map<string, PainView> {
+  if (_regionViewMap) return _regionViewMap;
+  const m = new Map<string, PainView>();
+  const add = (name: string, view: PainView) => {
+    if (!m.has(name)) m.set(name, view);
+  };
+  for (const s of ANT_CENTER) add(s.name, "anterior");
+  for (const s of ANT_PAIRED) {
+    add(`우측 ${s.base}`, "anterior");
+    add(`좌측 ${s.base}`, "anterior");
+  }
+  for (const s of POST_CENTER) add(s.name, "posterior");
+  for (const s of POST_PAIRED) {
+    add(`우측 ${s.base}`, "posterior");
+    add(`좌측 ${s.base}`, "posterior");
+  }
+  _regionViewMap = m;
+  return m;
+}
+
+function sanitizePainAreas(note: NoteData): NoteData {
+  const pa = note.painAreas as unknown;
+
+  // 표준 형식 (PainEntry[]) — 항목별 구조·범위 검증
+  if (Array.isArray(pa)) {
+    const clean: PainEntry[] = [];
+    for (const item of pa) {
+      if (item && typeof item === "object" && "region" in item && "painLevel" in item) {
+        const { view, region, painLevel } = item as { view?: unknown; region?: unknown; painLevel?: unknown };
+        if (
+          typeof region === "string" &&
+          typeof painLevel === "number" &&
+          painLevel >= 1 &&
+          painLevel <= 3 &&
+          typeof view === "string" &&
+          VALID_VIEWS.has(view)
+        ) {
+          clean.push({ view: view as PainView, region, painLevel: painLevel as PainLevel });
+        }
+      }
+      // string[] 등 그 외 항목은 변환 불가 → 무시
+    }
+    return { ...note, painAreas: clean };
+  }
+
+  // 구버전 Record<string, number> → PainEntry[] (부위명으로 view 역추정)
+  if (pa && typeof pa === "object") {
+    const regionView = getRegionViewMap();
+    const entries: PainEntry[] = [];
+    for (const [region, level] of Object.entries(pa as Record<string, unknown>)) {
+      if (typeof level === "number" && level >= 1 && level <= 3) {
+        entries.push({
+          view: regionView.get(region) ?? "anterior",
+          region,
+          painLevel: level as PainLevel,
+        });
+      }
+    }
+    return { ...note, painAreas: entries };
+  }
+
+  // null/undefined 등
+  return { ...note, painAreas: [] };
+}
+
 export async function fetchNotes(): Promise<NoteData[]> {
   const notes = await ensurePatientIds(await readNotes());
-  return notes.sort(
-    (a, b) => new Date(b.savedAt || 0).getTime() - new Date(a.savedAt || 0).getTime()
-  );
+  return notes
+    .map(sanitizePainAreas)
+    .sort((a, b) => new Date(b.savedAt || 0).getTime() - new Date(a.savedAt || 0).getTime());
 }
 
 export async function upsertNote(note: NoteData): Promise<NoteData> {

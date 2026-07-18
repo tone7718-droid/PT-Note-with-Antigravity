@@ -58,7 +58,7 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
       diagnosis: note.diagnosis,
       pmh: note.pmh,
       painScore: note.painScore,
-      painAreas: { ...note.painAreas },
+      painAreas: (note.painAreas ?? []).map((e) => ({ ...e })),
       chiefComplaint: note.chiefComplaint,
       rom: note.rom?.map((r) => ({ ...r })) || [],
       postural: note.postural,

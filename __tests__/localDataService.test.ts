@@ -14,7 +14,7 @@ const sampleNote = (overrides: Partial<NoteData> = {}): NoteData => ({
   diagnosis: "",
   pmh: "",
   painScore: null,
-  painAreas: {},
+  painAreas: [],
   chiefComplaint: "",
   rom: [],
   postural: "",
