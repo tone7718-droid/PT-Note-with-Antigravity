@@ -225,9 +225,17 @@ function resolvePatientId(
     if (match?.patientId) return match.patientId;
   }
 
-  // 구데이터 백필용: 기존 추이 차트가 이름 단독으로 묶던 동작 유지
-  if (options.allowNameOnly && name) {
-    const match = pool.find((n) => n.patientId && n.patientName?.trim() === name);
+  // 구데이터 백필용 이름 단독 매칭 — 동명이인 오병합을 막기 위해
+  // "양쪽 모두 차트번호·생년월일이 전혀 없는" 완전히 구분 불가능한
+  // 레코드끼리만 묶는다. (생년월일이 다른 동명이인은 절대 병합하지 않음)
+  if (options.allowNameOnly && name && !birth && !chartNo) {
+    const match = pool.find(
+      (n) =>
+        n.patientId &&
+        n.patientName?.trim() === name &&
+        !n.birthDate?.trim() &&
+        !n.chartNo?.trim()
+    );
     if (match?.patientId) return match.patientId;
   }
 
@@ -363,8 +371,16 @@ export async function resignTherapistDb(uid: string): Promise<void> {
   );
 }
 
+/**
+ * 퇴사 처리된 치료사 레코드를 영구 삭제.
+ * 마스터 계정·재직 중 치료사는 삭제 불가 (UI 우회 대비 데이터 계층 방어).
+ */
 export async function deleteTherapistDb(uid: string): Promise<void> {
   const therapists = read<TherapistRecord[]>(THERAPISTS_KEY, []);
+  const target = therapists.find((t) => t.uid === uid);
+  if (!target) throw new Error("해당 치료사를 찾을 수 없습니다.");
+  if (target.role === "master") throw new Error("마스터 계정은 삭제할 수 없습니다.");
+  if (!target.resigned) throw new Error("퇴사 처리된 치료사만 삭제할 수 있습니다.");
   write(
     THERAPISTS_KEY,
     therapists.filter((t) => t.uid !== uid)
@@ -397,6 +413,11 @@ export async function resetTherapistPasswordDb(
   uid: string,
   newPassword: string
 ): Promise<void> {
+  const session = read<Therapist | null>(SESSION_KEY, null);
+  if (!session || session.role !== "master") {
+    throw new Error("마스터 계정만 비밀번호를 재설정할 수 있습니다.");
+  }
+
   const therapists = read<TherapistRecord[]>(THERAPISTS_KEY, []);
   if (!therapists.some((t) => t.uid === uid)) {
     throw new Error("해당 치료사를 찾을 수 없습니다.");

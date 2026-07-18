@@ -10,6 +10,7 @@ import PasswordChangeModal from "./PasswordChangeModal";
 import TherapistManagementModal from "./TherapistManagementModal";
 import PatientTrendChart from "./PatientTrendChart";
 import BackupRestoreModal from "./BackupRestoreModal";
+import { todayLocalISO } from "@/lib/localDate";
 
 export default function Sidebar() {
   const notes = useNoteStore((s) => s.notes);
@@ -64,7 +65,7 @@ export default function Sidebar() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `pt-progress-notes-backup-${new Date().toISOString().split("T")[0]}.json`;
+      a.download = `pt-progress-notes-backup-${todayLocalISO()}.json`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {

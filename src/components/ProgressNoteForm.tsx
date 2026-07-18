@@ -14,9 +14,10 @@ import { RomSection } from "./features/note-form/RomSection";
 import { ClinicalSections } from "./features/note-form/ClinicalSections";
 import MacroSettingsModal from "./MacroSettingsModal";
 import { useMacroStore } from "@/store/useMacroStore";
+import { todayLocalISO } from "@/lib/localDate";
 
 const emptyRomRow = () => ({ joint: "", measuredROM: "", normalRange: "" });
-const todayStr = () => new Date().toISOString().split("T")[0];
+const todayStr = () => todayLocalISO();
 
 export default function ProgressNoteForm() {
   const selectedNoteId = useNoteStore((s) => s.selectedNoteId);

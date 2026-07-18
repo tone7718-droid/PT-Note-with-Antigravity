@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { NoteDataSchema, type NoteData } from "@/types";
 import * as ds from "@/lib/localDataService"; // 로컬 전환용
 import { useAuthStore } from "./useAuthStore";
+import { todayLocalISO } from "@/lib/localDate";
 
 interface NoteStore {
   notes: NoteData[];
@@ -27,6 +28,12 @@ interface NoteStore {
 
 const bySavedAtDesc = (a: NoteData, b: NoteData) =>
   new Date(b.savedAt || 0).getTime() - new Date(a.savedAt || 0).getTime();
+
+/** 노트 고유 ID — Date.now() 단독은 기기 간 백업 병합 시 충돌 가능하므로 UUID 우선 */
+const newNoteId = () =>
+  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? `note-${crypto.randomUUID()}`
+    : `note-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
 export const useNoteStore = create<NoteStore>((set, get) => ({
   notes: [],
@@ -59,7 +66,7 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
       specialTest: note.specialTest,
       treatment: note.treatment,
       homeExercise: note.homeExercise,
-      noteDate: new Date().toISOString().split("T")[0],
+      noteDate: todayLocalISO(),
       therapist: null,
       therapistUid: "",
     };
@@ -109,7 +116,7 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
     const now = new Date().toISOString();
     const noteToSave: NoteData = {
       ...data,
-      id: existingId || `note-${Date.now()}`,
+      id: existingId || newNoteId(),
       savedAt: now,
     };
 
