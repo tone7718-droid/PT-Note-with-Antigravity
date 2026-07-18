@@ -17,7 +17,7 @@ import { encryptData, decryptData } from "@/lib/cryptoService";
 const KEY = "pt_auto_backup_v1";
 const MAX_SNAPSHOTS = 5;
 
-export type BackupReason = "before-delete" | "before-import" | "before-restore";
+export type BackupReason = "before-delete" | "before-import" | "before-restore" | "before-edit";
 
 export interface BackupSnapshot {
   at: string;          // ISO timestamp

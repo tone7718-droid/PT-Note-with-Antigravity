@@ -13,6 +13,7 @@ const REASON_LABELS: Record<BackupReason, string> = {
   "before-delete": "삭제 전 자동 백업",
   "before-import": "가져오기 전 자동 백업",
   "before-restore": "복원 전 자동 백업",
+  "before-edit": "수정 전 자동 백업",
 };
 
 function formatDateTime(isoStr: string): string {

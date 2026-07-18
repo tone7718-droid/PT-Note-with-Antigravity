@@ -1,11 +1,9 @@
 /**
- * localStorage 기반 데이터 서비스 (임시 로컬 모드)
+ * localStorage 기반 데이터 서비스 (현재 운영 중인 단일 데이터 소스)
  *
- * 클라우드(Supabase) 저장이 완전히 검증/안정화되면
- * NoteContext.tsx의 import를 다시 dataService로 바꾸면 됩니다.
- *
- *   변경 전:  import * as ds from "@/lib/localDataService";
- *   변경 후:  import * as ds from "@/lib/dataService";
+ * 클라우드 모드 복귀 시: 새 lib/dataService.ts 작성 + 스토어의 import 변경.
+ * (이전 Supabase 연동 코드는 git history 에서 참조 가능 — dataService.ts,
+ * supabase.ts, database.types.ts 삭제 커밋 이전)
  */
 
 import type { NoteData, TherapistRecord, Therapist } from "@/types";
@@ -286,8 +284,13 @@ export async function upsertNote(note: NoteData): Promise<NoteData> {
   };
 
   const idx = pool.findIndex((n) => n.id === enriched.id);
-  if (idx >= 0) pool[idx] = enriched;
-  else pool.unshift(enriched);
+  if (idx >= 0) {
+    // 기존 노트 덮어쓰기 전 스냅샷 — 의무기록 수정 이력 보존 (실수로 덮어쓴 내용 복원 가능)
+    await snapshotBeforeDestructive("before-edit", pool);
+    pool[idx] = enriched;
+  } else {
+    pool.unshift(enriched);
+  }
   await writeNotes(pool);
   return enriched;
 }

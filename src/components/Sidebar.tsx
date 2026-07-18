@@ -130,8 +130,14 @@ export default function Sidebar() {
         return matchesSearch && matchesTherapist && matchesStartDate && matchesEndDate;
       })
       .sort((a, b) => {
-        if (sortBy === "newest") return new Date(b.savedAt || 0).getTime() - new Date(a.savedAt || 0).getTime();
-        if (sortBy === "oldest") return new Date(a.savedAt || 0).getTime() - new Date(b.savedAt || 0).getTime();
+        // 시술일(noteDate) 우선 정렬 — 옛 노트를 수정해도(savedAt 갱신) 목록
+        // 순서가 시술 시점 기준으로 유지되도록. 같은 날짜는 savedAt 으로 보조 정렬.
+        const at = new Date(a.noteDate || a.savedAt || 0).getTime();
+        const bt = new Date(b.noteDate || b.savedAt || 0).getTime();
+        const asaved = new Date(a.savedAt || 0).getTime();
+        const bsaved = new Date(b.savedAt || 0).getTime();
+        if (sortBy === "newest") return bt - at || bsaved - asaved;
+        if (sortBy === "oldest") return at - bt || asaved - bsaved;
         if (sortBy === "patientName") return (a.patientName || "").localeCompare(b.patientName || "");
         return 0;
       });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useForm, FormProvider, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNoteStore } from "@/store/useNoteStore";
@@ -171,7 +171,9 @@ export default function ProgressNoteForm() {
     const note = notes.find((n) => n.id === selectedNoteId);
     if (note) {
       const roms = note.rom && note.rom.length > 0 ? note.rom : [emptyRomRow()];
-      const values = { ...note, rom: roms };
+      // EMPTY_NOTE 스프레드 — 구버전 노트에 없는 신규 필드(assessment 등)를
+      // 기본값으로 채워 controlled input 경고를 방지
+      const values = { ...EMPTY_NOTE, ...note, rom: roms };
       reset(values);
       currentNoteIdRef.current = note.id ?? null;
       lastSavedSnapshotRef.current = JSON.stringify(values);
@@ -212,6 +214,20 @@ export default function ProgressNoteForm() {
 
   const displayTherapist = currentNoteId ? savedTherapist : therapist;
 
+  /* 회차 표시 — 같은 환자(patientId)의 노트를 시술일 순으로 세어 몇 번째
+     기록인지 보여준다 (기존 노트 편집 모드에서만) */
+  const sessionInfo = useMemo(() => {
+    if (!currentNoteId) return null;
+    const cur = notes.find((n) => n.id === currentNoteId);
+    if (!cur?.patientId) return null;
+    const timeOf = (n: NoteData) => new Date(n.noteDate || n.savedAt || 0).getTime();
+    const series = notes
+      .filter((n) => n.patientId === cur.patientId)
+      .sort((a, b) => timeOf(a) - timeOf(b) || new Date(a.savedAt || 0).getTime() - new Date(b.savedAt || 0).getTime());
+    const idx = series.findIndex((n) => n.id === currentNoteId);
+    return idx >= 0 ? { seq: idx + 1, total: series.length } : null;
+  }, [notes, currentNoteId]);
+
   return (
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSaveSubmit, onInvalid)}>
@@ -238,6 +254,9 @@ export default function ProgressNoteForm() {
               {currentNoteId ? (
                 <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 rounded-full shadow-sm ml-auto">
                   기존 노트 수정 중: <span className="font-bold">{patientName || "(이름 없음)"}</span>
+                  {sessionInfo && (
+                    <span className="font-bold whitespace-nowrap"> · {sessionInfo.seq}회차/{sessionInfo.total}회</span>
+                  )}
                 </span>
               ) : isDuplicated ? (
                 <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-50 dark:bg-purple-900/20 text-purple-800 dark:text-purple-400 border border-purple-200 dark:border-purple-900/50 rounded-full shadow-sm ml-auto">
