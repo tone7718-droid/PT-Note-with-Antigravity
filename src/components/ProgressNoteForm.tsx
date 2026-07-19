@@ -235,7 +235,8 @@ export default function ProgressNoteForm() {
           <div className="w-full h-full">
 
             {/* 타이틀 & 버튼 */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b-2 border-gray-200 dark:border-gray-800 mb-10 gap-4 print:border-transparent print:mb-6 print:pb-2">
+            {/* 종이 차트의 이중 괘선 — 문서 제목 아래 (시안 C) */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b-4 [border-bottom-style:double] border-gray-900 dark:border-gray-300 mb-10 gap-4 print:border-transparent print:mb-6 print:pb-2">
               <h1 className="font-extrabold text-center sm:text-left tracking-tight text-3xl sm:text-4xl text-gray-900 dark:text-white print:text-3xl print:text-left print:border-b-4 print:border-gray-800 print:pb-4">
                 물리치료 환자 평가지
               </h1>
@@ -321,7 +322,7 @@ export default function ProgressNoteForm() {
           <button type="button" onClick={handlePrint} className="flex-1 sm:hidden flex items-center justify-center gap-2 px-5 py-4 bg-gray-800 hover:bg-gray-900 active:bg-black text-white font-bold text-lg rounded-2xl shadow-lg transition-all focus:outline-none focus:ring-4 focus:ring-gray-300">
             📄 PDF
           </button>
-          <button type="submit" disabled={isSaving} className="flex-[2] sm:flex-none flex items-center justify-center gap-2 sm:gap-3 px-6 sm:px-8 py-4 bg-gray-900 hover:bg-gray-800 active:bg-black disabled:bg-gray-400 text-white font-extrabold text-lg sm:text-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-gray-900/50 transform sm:hover:-translate-y-2 select-none">
+          <button type="submit" disabled={isSaving} className="flex-[2] sm:flex-none flex items-center justify-center gap-2 sm:gap-3 px-6 sm:px-8 py-4 bg-gray-900 hover:bg-gray-800 active:bg-black disabled:bg-gray-400 text-white dark:bg-gray-100 dark:hover:bg-white dark:active:bg-white dark:disabled:bg-gray-600 dark:text-gray-900 font-extrabold text-lg sm:text-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-gray-900/50 dark:focus:ring-gray-100/40 transform sm:hover:-translate-y-2 select-none">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-7 sm:w-7" viewBox="0 0 20 20" fill="currentColor">
               <path d="M17 3H5a2 2 0 00-2 2v10a2 2 0 002 2h10l4-4V5a2 2 0 00-2-2zm-5 12H7v-4h5v4zm4-6H4V5h12v4z" />
             </svg>

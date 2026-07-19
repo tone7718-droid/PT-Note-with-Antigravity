@@ -27,38 +27,98 @@
     "Noto Sans KR", "Malgun Gothic", sans-serif;
 }
 
+/* ── 디자인 토큰 (시안 C · 차트 퍼스트) ──
+   색과 라운드를 최소로 줄이고 괘선·타이포그래피로 위계를 세우는
+   고밀도 방향. 종이 의무기록의 인상을 화면에 옮겨, 화면과 인쇄/PDF
+   출력물이 거의 같은 얼굴이 된다.
+   컴포넌트의 유틸리티 클래스는 그대로 두고 토큰 값만 갈아끼움. */
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  
+  --background: #ffffff; /* 순백 바탕 — 종이 차트 */
+  --foreground: #18181b;
+
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #18181b;
 
   --primary: #09090b;
   --primary-foreground: #ffffff;
 
-  --border: #e2e8f0;
-  --input: #e2e8f0;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
 }
 
 .dark {
-  --background: #0f172a;
-  --foreground: #f1f5f9;
-  
-  --card: #1e293b;
-  --card-foreground: #f1f5f9;
+  --background: #131316;
+  --foreground: #e4e4e7;
 
-  --primary: #f1f5f9;
-  --primary-foreground: #0f172a;
+  --card: #1b1b1f;
+  --card-foreground: #e4e4e7;
 
-  --border: #334155;
-  --input: #334155;
+  --primary: #e4e4e7;
+  --primary-foreground: #131316;
+
+  --border: #33333a;
+  --input: #33333a;
+}
+
+@theme {
+  /* 뉴트럴: 블루 기 없는 순수 zinc — gray/slate 를 동일 스케일로 통일 */
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f4f4f5;
+  --color-gray-200: #e4e4e7;
+  --color-gray-300: #d4d4d8;
+  --color-gray-400: #a1a1aa;
+  --color-gray-500: #71717a;
+  --color-gray-600: #52525b;
+  --color-gray-700: #3f3f46;
+  --color-gray-800: #26262c;
+  --color-gray-900: #18181b;
+  --color-gray-950: #131316;
+  --color-slate-50: #fafafa;
+  --color-slate-100: #f4f4f5;
+  --color-slate-200: #e4e4e7;
+  --color-slate-300: #d4d4d8;
+  --color-slate-400: #a1a1aa;
+  --color-slate-500: #71717a;
+  --color-slate-600: #52525b;
+  --color-slate-700: #3f3f46;
+  --color-slate-800: #26262c;
+  --color-slate-900: #18181b;
+  --color-slate-950: #131316;
+
+  /* 액센트: blue-* 를 잉크 스케일로 재매핑 — 색은 통증 시맨틱(주황·빨강)과
+     상태 표시(앰버)에만 남긴다 */
+  --color-blue-50: #f4f4f5;
+  --color-blue-100: #e9e9ec;
+  --color-blue-200: #d8d8dc;
+  --color-blue-300: #d4d4d8;
+  --color-blue-400: #a1a1aa;
+  --color-blue-500: #52525b;
+  --color-blue-600: #18181b;
+  --color-blue-700: #09090b;
+  --color-blue-800: #3f3f46;
+  --color-blue-900: #26262c;
+  --color-blue-950: #1b1b1f;
+
+  /* 라운드: 종이 차트의 각 — 거의 직각 */
+  --radius-lg: 0.3rem;
+  --radius-xl: 0.35rem;
+  --radius-2xl: 0.4rem;
+  --radius-3xl: 0.5rem;
+
+  /* 그림자: 띄우지 않는다 — 괘선이 위계를 담당 */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.04);
+  --shadow-md: 0 1px 3px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 2px 6px rgb(0 0 0 / 0.05);
+  --shadow-xl: 0 3px 8px rgb(0 0 0 / 0.06);
+  --shadow-2xl: 0 4px 12px rgb(0 0 0 / 0.06);
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-app);
+  /* 차트번호·날짜·NRS 점수가 세로로 정렬되도록 고정폭 숫자 사용 (시안 C) */
+  font-variant-numeric: tabular-nums;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 

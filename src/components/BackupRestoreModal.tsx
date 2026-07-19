@@ -121,7 +121,7 @@ export default function BackupRestoreModal({ onClose }: BackupRestoreModalProps)
             {error && <p className="text-red-500 dark:text-red-400 text-xs font-bold text-center mb-3">{error}</p>}
             <div className="flex gap-3">
               <button onClick={() => setConfirming(null)} className="flex-1 py-3.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold rounded-xl transition-colors">취소</button>
-              <button onClick={handleRestore} disabled={restoring} className="flex-1 py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold rounded-xl shadow-lg transition-colors">
+              <button onClick={handleRestore} disabled={restoring} className="flex-1 py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white dark:bg-gray-100 dark:hover:bg-white dark:disabled:bg-gray-600 dark:text-gray-900 font-bold rounded-xl shadow-lg transition-colors">
                 {restoring ? "복원 중..." : "복원"}
               </button>
             </div>
