@@ -13,7 +13,7 @@ interface NoteStore {
   isLoading: boolean;
   error: string | null;
 
-  selectNote: (id: string | null) => void;
+  selectNote: (id: string | null) => Promise<void>;
   createNewNote: () => void;
   duplicateNote: (id: string) => void;
   clearPendingDuplicate: () => void;
@@ -45,9 +45,9 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
   isLoading: false,
   error: null,
 
-  selectNote: (id) => {
+  selectNote: async (id) => {
     if (id === get().selectedNoteId) return;
-    void flushEditor().then(() => set({ selectedNoteId: id })).catch((err: Error) => set({ error: err.message }));
+    await flushEditor().then(() => set({ selectedNoteId: id })).catch((err: Error) => set({ error: err.message }));
   },
   createNewNote: () => { set({ pendingDuplicate: null }); get().selectNote(null); },
 

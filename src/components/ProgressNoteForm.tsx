@@ -108,7 +108,7 @@ export default function ProgressNoteForm() {
         });
         setSavedTherapist(saved.therapist ?? null);
         await markEditorSaved();
-        selectNote(saved.id ?? null);
+        await selectNote(saved.id ?? null);
         setSaveError("");
         return saved;
       } finally {
