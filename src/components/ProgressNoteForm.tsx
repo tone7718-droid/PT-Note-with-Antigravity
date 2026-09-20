@@ -22,6 +22,8 @@ const todayStr = () => todayLocalISO();
 export default function ProgressNoteForm() {
   const selectedNoteId = useNoteStore((s) => s.selectedNoteId);
   const notes = useNoteStore((s) => s.notes);
+  const storageError = useNoteStore((s) => s.error);
+  const [saveError, setSaveError] = useState("");
   const saveNote = useNoteStore((s) => s.saveNote);
   const selectNote = useNoteStore((s) => s.selectNote);
   const therapist = useAuthStore((s) => s.therapist);
@@ -97,13 +99,11 @@ export default function ProgressNoteForm() {
         // 없는 노트가 재저장마다 새 환자로 갈라지는 것(churn) 방지.
         // 되써주기로 폼 값이 바뀌면 자동 저장의 스냅샷 비교가 어긋나
         // 불필요한 재저장이 발생하므로, 마지막 저장 스냅샷에도 동일 반영.
-        if (saved.patientId && data.patientId !== saved.patientId) {
-          methods.setValue("patientId", saved.patientId);
-          lastSavedSnapshotRef.current = JSON.stringify({
-            ...JSON.parse(snapshot),
-            patientId: saved.patientId,
-          });
-        }
+        methods.setValue("patientId", saved.patientId);
+        methods.setValue("savedAt", saved.savedAt);
+        lastSavedSnapshotRef.current = JSON.stringify({
+          ...JSON.parse(snapshot), patientId: saved.patientId, savedAt: saved.savedAt,
+        });
         setSavedTherapist(saved.therapist ?? null);
         return saved;
       } finally {
@@ -126,8 +126,8 @@ export default function ProgressNoteForm() {
 
     const timer = setTimeout(() => {
       runSave(data, formSnapshot)
-        .then(() => setLastAutoSaved(new Date()))
-        .catch(console.error);
+        .then(() => { setLastAutoSaved(new Date()); setSaveError(""); })
+        .catch((err: Error) => setSaveError(err.message || "자동 저장에 실패했습니다."));
     }, 5000);
 
     return () => clearTimeout(timer);
@@ -194,7 +194,8 @@ export default function ProgressNoteForm() {
       setTimeout(() => setShowSaved(false), 3000);
     } catch (err) {
       console.error("저장 실패:", err);
-      alert("저장에 실패했습니다. 다시 시도해주세요.");
+      setSaveError((err as Error).message || "저장에 실패했습니다.");
+      alert((err as Error).message || "저장에 실패했습니다.");
     } finally {
       setIsSaving(false);
     }
@@ -231,6 +232,7 @@ export default function ProgressNoteForm() {
   return (
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(onSaveSubmit, onInvalid)}>
+        {(saveError || storageError) && <p role="alert" className="p-3 text-sm font-bold text-red-600">{saveError || storageError}</p>}
         <div className="max-w-5xl mx-auto px-3 sm:px-10 py-6 sm:py-10 bg-gray-50/30 dark:bg-gray-900 min-h-full pb-48 scroll-smooth print:bg-white print:p-0 print:m-0 print:pb-0">
           <div className="w-full h-full">
 

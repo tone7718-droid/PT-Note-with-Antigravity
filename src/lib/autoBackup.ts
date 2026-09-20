@@ -42,10 +42,11 @@ async function readStore(): Promise<BackupStore> {
       json = raw; // 암호화 전 평문 데이터 폴백 (다음 write 때 암호화로 업그레이드됨)
     }
     const parsed = JSON.parse(json);
-    if (!parsed || !Array.isArray(parsed.snapshots)) return { snapshots: [] };
+    if (!parsed || !Array.isArray(parsed.snapshots)) throw new Error("백업 형식 오류");
+    if (parsed.snapshots.some((snap: BackupSnapshot) => !snap || typeof snap.at !== "string" || !Number.isFinite(Date.parse(snap.at)) || !Array.isArray(snap.notes))) throw new Error("백업 항목 오류");
     return parsed as BackupStore;
   } catch {
-    return { snapshots: [] };
+    throw new Error("자동 백업을 읽을 수 없어 작업을 중단했습니다. 원본을 보존했습니다.");
   }
 }
 
@@ -66,10 +67,10 @@ async function writeStore(store: BackupStore): Promise<boolean> {
   return false;
 }
 
-/** 파괴적 작업 직전 호출. 실패해도 throw 안 함 — 조용한 보험이 목적. */
+/** 파괴적 작업 직전 호출. 백업 저장 실패 시 throw 하여 원본 변경을 중단한다. */
 export async function snapshotBeforeDestructive(reason: BackupReason, notes: NoteData[]): Promise<void> {
   if (typeof window === "undefined") return;
-  if (!Array.isArray(notes) || notes.length === 0) return; // 비어 있으면 의미 없음
+  if (!Array.isArray(notes)) throw new Error("백업 기록 형식 오류");
 
   const snap: BackupSnapshot = {
     at: new Date().toISOString(),
@@ -78,8 +79,10 @@ export async function snapshotBeforeDestructive(reason: BackupReason, notes: Not
     notes,
   };
   const store = await readStore();
+  const lastAt = store.snapshots.at(-1)?.at;
+  if (lastAt) snap.at = new Date(Math.max(Date.now(), new Date(lastAt).getTime() + 1)).toISOString();
   const next = [...store.snapshots, snap].slice(-MAX_SNAPSHOTS);
-  await writeStore({ snapshots: next });
+  if (!await writeStore({ snapshots: next })) throw new Error("자동 백업 저장에 실패하여 작업을 중단했습니다. 저장 공간을 확인해주세요.");
 }
 
 /** 복원 UI(BackupRestoreModal) / 콘솔 디버깅용. 최신이 배열 끝. */

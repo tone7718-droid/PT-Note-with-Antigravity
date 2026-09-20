@@ -1,5 +1,6 @@
+import type { ImportResult } from "@/lib/backupExchange";
 import { create } from "zustand";
-import { NoteDataSchema, type NoteData } from "@/types";
+import { type NoteData } from "@/types";
 import * as ds from "@/lib/localDataService"; // 로컬 전환용
 import { useAuthStore } from "./useAuthStore";
 import { todayLocalISO } from "@/lib/localDate";
@@ -20,7 +21,8 @@ interface NoteStore {
   deleteNotes: (ids: string[]) => Promise<void>;
   transferNotes: (fromUid: string, toUid: string, toName: string, toLoginId: string | null) => Promise<void>;
   exportData: () => Promise<string>;
-  importData: (json: string) => Promise<{ notesCount: number; therapistsCount: number }>;
+  exportDataEncrypted: (passphrase: string) => Promise<string>;
+  importData: (json: string, passphrase?: string) => Promise<ImportResult>;
   listBackups: () => Promise<import("@/lib/autoBackup").BackupSnapshot[]>;
   restoreBackup: (at: string) => Promise<number>;
   initSync: () => void;
@@ -34,6 +36,8 @@ const newNoteId = () =>
   typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
     ? `note-${crypto.randomUUID()}`
     : `note-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+let storageListenerInstalled = false;
 
 export const useNoteStore = create<NoteStore>((set, get) => ({
   notes: [],
@@ -76,6 +80,14 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
   clearPendingDuplicate: () => set({ pendingDuplicate: null }),
 
   initSync: () => {
+    if (!storageListenerInstalled && typeof window !== "undefined") {
+      storageListenerInstalled = true;
+      window.addEventListener("storage", (event) => {
+        if ((event.key === "pt_local_notes" || event.key === null) && useAuthStore.getState().therapist) {
+          void get().refreshNotes();
+        }
+      });
+    }
     // Auth 상태 리스너 등록
     ds.onAuthStateChange(async (t) => {
       useAuthStore.getState().setTherapist(t);
@@ -106,14 +118,17 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
   refreshNotes: async () => {
     try {
       const fetchedNotes = await ds.fetchNotes();
-      set({ notes: fetchedNotes });
+      set({ notes: fetchedNotes, error: null });
     } catch (err) {
       set({ error: (err as Error).message });
     }
   },
 
   saveNote: async (data, existingId) => {
-    const now = new Date().toISOString();
+    const expectedSavedAt = existingId
+      ? (data as Partial<NoteData>).savedAt ?? get().notes.find((note) => note.id === existingId)?.savedAt
+      : undefined;
+    const now = new Date(Math.max(Date.now(), (Date.parse(expectedSavedAt ?? "") || 0) + 1)).toISOString();
     const noteToSave: NoteData = {
       ...data,
       id: existingId || newNoteId(),
@@ -131,12 +146,13 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
     });
 
     try {
-      const saved = await ds.upsertNote(noteToSave);
+      const saved = await ds.upsertNote(noteToSave, expectedSavedAt);
       set((state) => ({
         notes: state.notes
           .map((n) => (n.id === saved.id ? saved : n))
           .sort(bySavedAtDesc),
       }));
+      await get().refreshNotes();
       return saved;
     } catch (err) {
       // rollback
@@ -161,46 +177,21 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
 
   transferNotes: async (fromUid, toUid, toName, toLoginId) => {
     await ds.transferNotesRpc(fromUid, toUid, toName, toLoginId);
-    set((state) => ({
-      notes: state.notes.map((n) => {
-        if (n.therapistUid === fromUid) {
-          return {
-            ...n,
-            therapistUid: toUid,
-            therapist: { uid: toUid, id: toLoginId, name: toName, role: "therapist" as const },
-          };
-        }
-        return n;
-      })
-    }));
+    await get().refreshNotes();
   },
 
   exportData: async () => {
     return ds.exportAllData();
   },
 
-  importData: async (json) => {
-    const data = JSON.parse(json);
-    if (!data.notes || !Array.isArray(data.notes)) throw new Error("잘못된 데이터 형식입니다.");
+  exportDataEncrypted: (passphrase) => ds.exportAllDataEncrypted(passphrase),
 
-    // 스키마 검증 — 필수 필드가 깨진 노트는 걸러내 앱 크래시를 방지
-    const validNotes = (data.notes as unknown[]).flatMap((raw) => {
-      const parsed = NoteDataSchema.safeParse(raw);
-      return parsed.success ? [parsed.data as NoteData] : [];
-    });
-
-    const notesCount = await ds.importNotes(validNotes);
-    const therapistsCount = Array.isArray(data.therapists)
-      ? await ds.importTherapists(data.therapists as ds.ImportableTherapist[])
-      : 0;
-
-    const updatedNotes = await ds.fetchNotes();
-    set({ notes: updatedNotes });
-    if (therapistsCount > 0) {
-      useAuthStore.getState().setTherapists(await ds.fetchTherapists());
-    }
-
-    return { notesCount, therapistsCount };
+  importData: async (json, passphrase) => {
+    const result = await ds.importCompatibleBackup(json, passphrase);
+    const [notes, therapists] = await Promise.all([ds.fetchNotes(), ds.fetchTherapists()]);
+    set({ notes, error: null });
+    useAuthStore.getState().setTherapists(therapists);
+    return result;
   },
 
   listBackups: async () => {

@@ -36,6 +36,8 @@ export default function BackupRestoreModal({ onClose }: BackupRestoreModalProps)
     void listBackups().then((snaps) => {
       // 최신이 배열 끝에 저장되므로 화면에는 최신부터 표시
       if (!cancelled) setSnapshots([...snaps].reverse());
+    }).catch((err: Error) => {
+      if (!cancelled) { setError(err.message); setSnapshots([]); }
     });
     return () => {
       cancelled = true;
@@ -76,6 +78,7 @@ export default function BackupRestoreModal({ onClose }: BackupRestoreModalProps)
             복원 직전 상태도 자동 백업에 남아 다시 되돌릴 수 있습니다.
           </p>
 
+          {error && <p role="alert" className="text-red-600 mb-3">{error}</p>}
           {snapshots === null ? (
             <p className="text-center text-gray-400 dark:text-gray-500 py-8 text-sm font-bold">불러오는 중...</p>
           ) : snapshots.length === 0 ? (

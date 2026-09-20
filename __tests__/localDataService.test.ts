@@ -54,20 +54,12 @@ describe("localDataService — 암호화 저장", () => {
     expect(window.localStorage.getItem("pt_local_notes")!).not.toContain("평문환자");
   });
 
-  it("quarantines undecryptable data instead of silently losing it", async () => {
-    window.localStorage.setItem("pt_local_notes", "corrupted-not-json{{{");
-
-    expect(await ds.fetchNotes()).toEqual([]);
-
-    const quarantineKeys = Object.keys(window.localStorage).filter((k) =>
-      k.startsWith("pt_local_notes_corrupt_")
-    );
-    expect(quarantineKeys).toHaveLength(1);
-    expect(window.localStorage.getItem(quarantineKeys[0])).toBe("corrupted-not-json{{{");
-
-    await ds.upsertNote(sampleNote({ id: "new-1" }));
-    expect(window.localStorage.getItem(quarantineKeys[0])).toBe("corrupted-not-json{{{");
-    expect(await ds.fetchNotes()).toHaveLength(1);
+  it("preserves corrupt original data and blocks further saves", async () => {
+    const raw = "corrupted-not-json{{{";
+    window.localStorage.setItem("pt_local_notes", raw);
+    await expect(ds.fetchNotes()).rejects.toThrow();
+    await expect(ds.upsertNote(sampleNote({ id: "new-1" }))).rejects.toThrow();
+    expect(window.localStorage.getItem("pt_local_notes")).toBe(raw);
   });
 });
 

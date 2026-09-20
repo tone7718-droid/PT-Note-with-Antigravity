@@ -10,7 +10,9 @@ import PasswordChangeModal from "./PasswordChangeModal";
 import TherapistManagementModal from "./TherapistManagementModal";
 import PatientTrendChart from "./PatientTrendChart";
 import BackupRestoreModal from "./BackupRestoreModal";
-import { todayLocalISO } from "@/lib/localDate";
+import { describeImport } from "@/lib/backupExchange";
+import { isEncryptedBackup } from "@/lib/localDataService";
+import BackupPasswordModal from "./BackupPasswordModal";
 
 export default function Sidebar() {
   const notes = useNoteStore((s) => s.notes);
@@ -20,7 +22,7 @@ export default function Sidebar() {
   const duplicateNote = useNoteStore((s) => s.duplicateNote);
   const deleteNotes = useNoteStore((s) => s.deleteNotes);
   const transferNotes = useNoteStore((s) => s.transferNotes);
-  const exportData = useNoteStore((s) => s.exportData);
+  const [backupDialog, setBackupDialog] = useState<{ text?: string } | null>(null);
   const importData = useNoteStore((s) => s.importData);
   
   const therapist = useAuthStore((s) => s.therapist);
@@ -58,20 +60,7 @@ export default function Sidebar() {
   /* ── 데이터 내보내기/가져오기 ── */
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleExportData = async () => {
-    try {
-      const json = await exportData();
-      const blob = new Blob([json], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `pt-progress-notes-backup-${todayLocalISO()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      alert("데이터 내보내기에 실패했습니다.");
-    }
-  };
+  const handleExportData = () => setBackupDialog({});
 
   const handleImportData = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -79,12 +68,14 @@ export default function Sidebar() {
     const reader = new FileReader();
     reader.onload = async (ev) => {
       try {
-        const result = await importData(ev.target?.result as string);
-        alert(`가져오기 완료: 노트 ${result.notesCount}건, 치료사 ${result.therapistsCount}명 추가됨`);
-      } catch {
-        alert("데이터 가져오기 실패: 올바른 JSON 파일인지 확인해주세요.");
+        const text = ev.target?.result as string;
+        if (isEncryptedBackup(text)) { setBackupDialog({ text }); return; }
+        alert(describeImport(await importData(text)));
+      } catch (err) {
+        alert(`데이터 가져오기 실패: ${(err as Error).message}`);
       }
     };
+    reader.onerror = () => alert("파일을 읽지 못했습니다.");
     reader.readAsText(file);
     e.target.value = "";
   };
@@ -430,6 +421,7 @@ export default function Sidebar() {
       {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}
       {showTherapistModal && <TherapistManagementModal onClose={() => setShowTherapistModal(false)} />}
       {showPwChange && <PasswordChangeModal onClose={() => setShowPwChange(false)} />}
+      {backupDialog && <BackupPasswordModal text={backupDialog.text} onClose={() => setBackupDialog(null)} />}
       {showBackupRestore && <BackupRestoreModal onClose={() => setShowBackupRestore(false)} />}
       {trendChartData && (
         <PatientTrendChart 
