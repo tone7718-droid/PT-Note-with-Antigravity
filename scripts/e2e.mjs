@@ -44,7 +44,7 @@ try {
   await page.getByRole("button", { name: "새 노트 작성", exact: true }).first().click();
   await page.waitForFunction(() => document.querySelector('input[name="patientName"]').value === "");
   assert.ok(await page.evaluate(() => Object.keys(localStorage).some(key => key.startsWith("pt_editor_draft_v1:") && !key.includes(":new:"))), "existing-record draft must survive navigation/logout");
-  await page.locator("li").filter({ hasText: "테스트 환자 A" }).first().getByText("테스트 환자 A", { exact: true }).click();
+  await page.locator("li").filter({ hasText: "테스트 환자 A" }).first().getByText("테스트 환자 A", { exact: false }).click();
   await page.waitForFunction(() => document.querySelector('input[name="patientName"]').value === "테스트 환자 A");
   await page.getByRole("button", { name: "초안 복구", exact: true }).first().click();
   assert.equal(await diagnosis.inputValue(), "수정 중 진단");
@@ -56,7 +56,7 @@ try {
   await page.locator('#login-id').fill("master"); await page.locator('#login-pw').fill("Test-pass-1!");
   await page.getByRole("button", { name: "로그인", exact: true }).click();
   assert.ok(await page.evaluate(() => Object.keys(localStorage).some(key => key.startsWith("pt_editor_draft_v1:") && !key.includes(":new:"))), "existing-record draft must survive navigation/logout");
-  await page.locator("li").filter({ hasText: "테스트 환자 A" }).first().getByText("테스트 환자 A", { exact: true }).click();
+  await page.locator("li").filter({ hasText: "테스트 환자 A" }).first().getByText("테스트 환자 A", { exact: false }).click();
   await page.waitForFunction(() => document.querySelector('input[name="patientName"]').value === "테스트 환자 A");
   await page.getByRole("button", { name: "초안 복구", exact: true }).first().click();
   assert.equal(await diagnosis.inputValue(), "로그아웃 전 미저장");
