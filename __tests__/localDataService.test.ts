@@ -1,3 +1,4 @@
+import { seedLegacyAdmin } from "./testAuth";
 import { describe, it, expect, beforeEach } from "vitest";
 import * as ds from "@/lib/localDataService";
 import { listBackups } from "@/lib/autoBackup";
@@ -28,8 +29,8 @@ const sampleNote = (overrides: Partial<NoteData> = {}): NoteData => ({
   ...overrides,
 });
 
-beforeEach(() => {
-  window.localStorage.clear();
+beforeEach(async () => {
+  await seedLegacyAdmin();
   invalidateEncKeyCache();
 });
 

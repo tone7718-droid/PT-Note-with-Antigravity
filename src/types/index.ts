@@ -29,7 +29,17 @@ export interface PainEntry {
   painLevel: PainLevel;
 }
 
+export interface RomMeasurement {
+  joint: string; measuredROM: string; normalRange: string;
+  movement?: string; side?: "" | "left" | "right" | "both";
+  mode?: "" | "AROM" | "PROM"; startAngle?: number | null; endAngle?: number | null;
+}
 export interface NoteData {
+  hospitalId?: string;
+  createdBy?: Therapist | null;
+  createdAt?: string;
+  updatedBy?: Therapist | null;
+  updatedAt?: string;
   id?: string;
   savedAt?: string;
   patientId?: string; // 내부 환자 식별자 (동명이인 구분용, 저장 시 자동 부여)
@@ -42,7 +52,7 @@ export interface NoteData {
   painScore: number | null;
   painAreas: PainEntry[];
   chiefComplaint: string;
-  rom: { joint: string; measuredROM: string; normalRange: string }[];
+  rom: RomMeasurement[];
   postural: string;
   palpation: string;
   specialTest: string;
@@ -78,6 +88,9 @@ export const NoteDataSchema = z.object({
   id: z.string().optional(),
   savedAt: z.string().optional(),
   patientId: z.string().optional(),
+  hospitalId: z.string().optional(),
+  createdBy: TherapistSchema.nullish(), createdAt: z.string().optional(),
+  updatedBy: TherapistSchema.nullish(), updatedAt: z.string().optional(),
   patientName: z.string().min(1, "환자 성명을 입력해주세요."),
   chartNo: z.string(),
   birthDate: z.string(),
@@ -95,6 +108,11 @@ export const NoteDataSchema = z.object({
   chiefComplaint: z.string(),
   rom: z.array(
     z.object({
+      movement: z.string().optional(),
+      side: z.enum(["", "left", "right", "both"]).optional(),
+      mode: z.enum(["", "AROM", "PROM"]).optional(),
+      startAngle: z.number().finite().min(-360).max(360).nullish(),
+      endAngle: z.number().finite().min(-360).max(360).nullish(),
       joint: z.string(),
       measuredROM: z.string(),
       normalRange: z.string()

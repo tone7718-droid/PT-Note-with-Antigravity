@@ -13,7 +13,7 @@ export function isDefaultPassword(pw: string): boolean {
 
 /**
  * 새 비밀번호 검증. 통과하면 null, 실패하면 사용자용 오류 메시지를 반환.
- * 허용: 공백·제어문자를 제외한 4~20자 (영문/숫자/특수문자). 기본 비밀번호(0000) 거부.
+ * 허용: 공백·제어문자를 제외한 8~20자 (영문/숫자/특수문자). 기본 비밀번호(0000) 거부.
  */
 export function validateNewPassword(pw: string): string | null {
   if (pw.length < PASSWORD_MIN || pw.length > PASSWORD_MAX) {

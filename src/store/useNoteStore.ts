@@ -1,3 +1,4 @@
+import { flushEditor } from "@/lib/editorDraft";
 import type { ImportResult } from "@/lib/backupExchange";
 import { create } from "zustand";
 import { type NoteData } from "@/types";
@@ -28,8 +29,6 @@ interface NoteStore {
   initSync: () => void;
 }
 
-const bySavedAtDesc = (a: NoteData, b: NoteData) =>
-  new Date(b.savedAt || 0).getTime() - new Date(a.savedAt || 0).getTime();
 
 /** 노트 고유 ID — Date.now() 단독은 기기 간 백업 병합 시 충돌 가능하므로 UUID 우선 */
 const newNoteId = () =>
@@ -46,10 +45,14 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
   isLoading: false,
   error: null,
 
-  selectNote: (id) => set({ selectedNoteId: id }),
-  createNewNote: () => set({ selectedNoteId: null, pendingDuplicate: null }),
+  selectNote: (id) => {
+    if (id === get().selectedNoteId) return;
+    void flushEditor().then(() => set({ selectedNoteId: id })).catch((err: Error) => set({ error: err.message }));
+  },
+  createNewNote: () => { set({ pendingDuplicate: null }); get().selectNote(null); },
 
-  duplicateNote: (id) => {
+  duplicateNote: async (id) => {
+    try { await flushEditor(); } catch (err) { set({ error: (err as Error).message }); return; }
     const note = get().notes.find((n) => n.id === id);
     if (!note) return;
     // 임상 데이터는 유지하고 작성일/담당 치료사만 초기화
@@ -83,7 +86,7 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
     if (!storageListenerInstalled && typeof window !== "undefined") {
       storageListenerInstalled = true;
       window.addEventListener("storage", (event) => {
-        if ((event.key === "pt_local_notes" || event.key === null) && useAuthStore.getState().therapist) {
+        if ((event.key === "pt_local_notes" || event.key === "pt_local_therapists" || event.key === null) && useAuthStore.getState().therapist) {
           void get().refreshNotes();
         }
       });
@@ -121,6 +124,10 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
       set({ notes: fetchedNotes, error: null });
     } catch (err) {
       set({ error: (err as Error).message });
+      if ((err as Error).message.includes("세션이 만료")) {
+        set({ notes: [], selectedNoteId: null });
+        useAuthStore.getState().setTherapist(null);
+      }
     }
   },
 
@@ -135,33 +142,18 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
       savedAt: now,
     };
 
-    // Optimistic Update — 목록에 있으면 교체, 없으면 추가.
-    // selectedNoteId는 건드리지 않는다 (폼이 저장 완료 후 직접 동기화).
-    set((state) => {
-      const exists = state.notes.some((n) => n.id === noteToSave.id);
-      const updated = exists
-        ? state.notes.map((n) => (n.id === noteToSave.id ? noteToSave : n))
-        : [noteToSave, ...state.notes];
-      return { notes: updated.sort(bySavedAtDesc) };
-    });
-
     try {
       const saved = await ds.upsertNote(noteToSave, expectedSavedAt);
-      set((state) => ({
-        notes: state.notes
-          .map((n) => (n.id === saved.id ? saved : n))
-          .sort(bySavedAtDesc),
-      }));
       await get().refreshNotes();
       return saved;
     } catch (err) {
-      // rollback
-      get().refreshNotes();
+      await get().refreshNotes();
       throw err;
     }
   },
 
   deleteNotes: async (ids) => {
+    await flushEditor();
     set((state) => ({
       notes: state.notes.filter((n) => !n.id || !ids.includes(n.id)),
       selectedNoteId: state.selectedNoteId && ids.includes(state.selectedNoteId) ? null : state.selectedNoteId
@@ -187,6 +179,7 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
   exportDataEncrypted: (passphrase) => ds.exportAllDataEncrypted(passphrase),
 
   importData: async (json, passphrase) => {
+    await flushEditor();
     const result = await ds.importCompatibleBackup(json, passphrase);
     const [notes, therapists] = await Promise.all([ds.fetchNotes(), ds.fetchTherapists()]);
     set({ notes, error: null });
@@ -199,6 +192,7 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
   },
 
   restoreBackup: async (at) => {
+    await flushEditor();
     const restored = await ds.restoreAutoBackup(at);
     set({ notes: await ds.fetchNotes(), selectedNoteId: null });
     return restored;

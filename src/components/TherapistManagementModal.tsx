@@ -176,8 +176,8 @@ export default function TherapistManagementModal({ onClose }: TherapistManagemen
                       className="w-full p-4 border-2 border-gray-100 dark:border-gray-700 rounded-2xl focus:border-gray-900 dark:focus:border-white focus:ring-4 focus:ring-gray-900/10 dark:focus:ring-white/5 transition-all font-bold text-lg outline-none bg-white dark:bg-gray-900 dark:text-white" />
                   </div>
                   <div>
-                    <label htmlFor="reg-pw" className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">비밀번호 (4~20자)</label>
-                    <input id="reg-pw" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="4~20자"
+                    <label htmlFor="reg-pw" className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">비밀번호 (8~20자)</label>
+                    <input id="reg-pw" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="8~20자"
                       className="w-full p-4 border-2 border-gray-100 dark:border-gray-700 rounded-2xl focus:border-gray-900 dark:focus:border-white focus:ring-4 focus:ring-gray-900/10 dark:focus:ring-white/5 transition-all font-bold text-lg outline-none tracking-widest bg-white dark:bg-gray-900 dark:text-white" />
                   </div>
                 </div>
@@ -304,7 +304,7 @@ export default function TherapistManagementModal({ onClose }: TherapistManagemen
             <label htmlFor="reset-pw" className="sr-only">새 비밀번호</label>
             <input id="reset-pw" type="password" value={resetPw}
               onChange={(e) => { setResetPw(e.target.value); setResetError(""); }}
-              placeholder="4~20자 영문/숫자/특수문자" autoFocus
+              placeholder="8~20자 영문/숫자/특수문자" autoFocus
               className="w-full p-4 border-2 border-gray-200 dark:border-gray-700 rounded-2xl focus:border-gray-900 dark:focus:border-white focus:ring-4 focus:ring-gray-900/10 dark:focus:ring-white/5 text-center font-bold tracking-widest outline-none mb-3 bg-white dark:bg-gray-900 dark:text-white" />
             {resetError && <p className="text-red-500 dark:text-red-400 text-xs font-bold text-center mb-3">{resetError}</p>}
             <div className="flex gap-3">

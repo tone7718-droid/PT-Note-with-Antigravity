@@ -1,7 +1,7 @@
 name: CI
 
 # 푸시 / PR 마다 lint + 타입 검사 + Vitest + 정적 빌드 검증.
-# (Playwright E2E 는 dev 서버 기동이 필요해 별도 잡으로 분리할 것.)
+# 빌드 산출물로 실제 브라우저의 초안·복구·이력 흐름까지 검사합니다.
 
 on:
   push:
@@ -22,3 +22,5 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e

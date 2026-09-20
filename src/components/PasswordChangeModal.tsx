@@ -78,7 +78,7 @@ export default function PasswordChangeModal({ onClose }: PasswordChangeModalProp
             비밀번호 변경
           </h2>
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-6">
-            4~20자 영문/숫자/특수문자
+            8~20자 영문/숫자/특수문자
           </p>
 
           {success ? (

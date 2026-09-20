@@ -1,4 +1,7 @@
 "use client";
+import DraftRecoveryPanel from "./DraftRecoveryPanel";
+import RecordHistoryPanel from "./RecordHistoryPanel";
+import { markEditorSaved } from "@/lib/editorDraft";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useForm, FormProvider, type FieldErrors } from "react-hook-form";
@@ -41,7 +44,6 @@ export default function ProgressNoteForm() {
   const [savedTherapist, setSavedTherapist] = useState<Therapist | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [lastAutoSaved, setLastAutoSaved] = useState<Date | null>(null);
   const [showMacroModal, setShowMacroModal] = useState(false);
   const [isDuplicated, setIsDuplicated] = useState(false);
 
@@ -66,7 +68,7 @@ export default function ProgressNoteForm() {
   // watch()는 렌더마다 새 객체를 반환하므로 effect 의존성으로는 직렬화한 스냅샷을 사용
   const formData = watch();
   const patientName = formData.patientName;
-  const formSnapshot = JSON.stringify(formData);
+
 
   const runSave = useCallback(
     async (data: NoteData, snapshot: string): Promise<NoteData> => {
@@ -93,7 +95,7 @@ export default function ProgressNoteForm() {
         if (saved.id) {
           currentNoteIdRef.current = saved.id;
           setCurrentNoteId(saved.id);
-          selectNote(saved.id); // 사이드바 하이라이트 동기화
+
         }
         // 저장 시 부여된 patientId 를 폼에 되써준다 — 차트번호·생년월일이
         // 없는 노트가 재저장마다 새 환자로 갈라지는 것(churn) 방지.
@@ -105,6 +107,9 @@ export default function ProgressNoteForm() {
           ...JSON.parse(snapshot), patientId: saved.patientId, savedAt: saved.savedAt,
         });
         setSavedTherapist(saved.therapist ?? null);
+        await markEditorSaved();
+        selectNote(saved.id ?? null);
+        setSaveError("");
         return saved;
       } finally {
         if (pendingSaveRef.current === savePromise) {
@@ -114,24 +119,6 @@ export default function ProgressNoteForm() {
     },
     [therapist, savedTherapist, saveNote, selectNote, methods]
   );
-
-  // 자동 임시 저장 (Auto-save: 5초 디바운스)
-  // 마지막 저장 스냅샷과 같으면 타이머를 걸지 않으므로, 저장이 유발한 리렌더로
-  // 저장이 무한 반복되지 않는다.
-  useEffect(() => {
-    if (formSnapshot === lastSavedSnapshotRef.current) return;
-
-    const data = JSON.parse(formSnapshot) as NoteData;
-    if (!data.patientName || !data.diagnosis) return; // 필수 항목이 없으면 자동 저장 안 함
-
-    const timer = setTimeout(() => {
-      runSave(data, formSnapshot)
-        .then(() => { setLastAutoSaved(new Date()); setSaveError(""); })
-        .catch((err: Error) => setSaveError(err.message || "자동 저장에 실패했습니다."));
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [formSnapshot, runSave]);
 
   // selectedNoteId 변경 시 폼 데이터 로드 또는 리셋
   // notes 갱신(저장 완료 등)만으로는 reset하지 않아 입력 중인 내용이 날아가지 않는다.
@@ -231,7 +218,10 @@ export default function ProgressNoteForm() {
 
   return (
     <FormProvider {...methods}>
+      <DraftRecoveryPanel noteId={selectedNoteId} />
+      <RecordHistoryPanel key={selectedNoteId ?? "new"} noteId={selectedNoteId} />
       <form onSubmit={handleSubmit(onSaveSubmit, onInvalid)}>
+        <fieldset disabled={isSaving}>
         {(saveError || storageError) && <p role="alert" className="p-3 text-sm font-bold text-red-600">{saveError || storageError}</p>}
         <div className="max-w-5xl mx-auto px-3 sm:px-10 py-6 sm:py-10 bg-gray-50/30 dark:bg-gray-900 min-h-full pb-48 scroll-smooth print:bg-white print:p-0 print:m-0 print:pb-0">
           <div className="w-full h-full">
@@ -270,11 +260,7 @@ export default function ProgressNoteForm() {
                   ✨ 새 노트 작성
                 </span>
               )}
-              {lastAutoSaved && (
-                <span className="ml-4 text-xs text-gray-400">
-                  마지막 임시 저장: {lastAutoSaved.toLocaleTimeString()}
-                </span>
-              )}
+
             </div>
 
             <div className="text-gray-800 dark:text-gray-200 space-y-6 sm:space-y-10 md:space-y-12 print:space-y-6">
@@ -351,6 +337,7 @@ export default function ProgressNoteForm() {
           </div>
           노트가 성공적으로 저장되었습니다.
         </div>
+        </fieldset>
       </form>
 
       {/* 매크로 설정 모달 */}

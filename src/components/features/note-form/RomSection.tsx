@@ -1,4 +1,5 @@
 "use client";
+import { RomDetails } from "@/components/RomDetails";
 
 import React, { useState, useRef, useEffect } from "react";
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
@@ -45,7 +46,7 @@ export function RomSection({ isGeneratingPdf }: { isGeneratingPdf: boolean }) {
     control,
     name: "rom",
   });
-  
+
   // 감시용
   const romValues = watch("rom");
 
@@ -80,7 +81,7 @@ export function RomSection({ isGeneratingPdf }: { isGeneratingPdf: boolean }) {
   return (
     <Card isPdfMode={isGeneratingPdf}>
       <h2 className={sectionTitleCls}>4. 관절 가동범위 (ROM &amp; Flexibility)</h2>
-      
+
       <div className={cn("bg-white dark:bg-gray-800/50 rounded-2xl border-2 border-slate-100 dark:border-gray-700 p-6 shadow-sm min-h-[250px]", isGeneratingPdf && "border-none shadow-none p-0")}>
         <div className="hidden lg:grid lg:grid-cols-[1fr_1.5fr_48px] gap-6 mb-4 px-2">
           <span className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">관절 동작 선택</span>
@@ -183,10 +184,10 @@ export function RomSection({ isGeneratingPdf }: { isGeneratingPdf: boolean }) {
                       render={({ field: inputProps }) => (
                         <Input
                           {...inputProps}
-                          type="number"
+                          type="text"
                           isPdfMode={isGeneratingPdf}
-                          min={0}
-                          max={360}
+
+
                           className={cn(
                             "pr-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-center font-bold text-xl",
                             isSelected && !isGeneratingPdf ? "text-gray-900 bg-white ring-2 ring-gray-200 placeholder-gray-400" : !isGeneratingPdf ? "bg-gray-100 text-gray-400 placeholder-gray-300" : ""
@@ -218,6 +219,7 @@ export function RomSection({ isGeneratingPdf }: { isGeneratingPdf: boolean }) {
                     </svg>
                   </button>
                 )}
+                <RomDetails index={index} isPdf={isGeneratingPdf} />
               </div>
             );
           })}
