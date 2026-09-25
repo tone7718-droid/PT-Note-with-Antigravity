@@ -3,6 +3,7 @@
 import Sidebar from "@/components/Sidebar";
 import ProgressNoteForm from "@/components/ProgressNoteForm";
 import LoginModal from "@/components/LoginModal";
+import AutoLock from "@/components/AutoLock";
 
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -105,6 +106,8 @@ function HomeContent() {
       <div className="w-full flex-1 overflow-y-auto relative bg-white dark:bg-gray-900 scroll-smooth h-full print:h-auto print:overflow-visible print:block">
         <ProgressNoteForm />
       </div>
+
+      <AutoLock />
     </div>
   );
 }
