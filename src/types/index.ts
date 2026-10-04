@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export interface TherapistRecord {
+  importUnassigned?: boolean; // Imported identity awaiting explicit administrator assignment
   uid: string;
   id: string | null;
   name: string;

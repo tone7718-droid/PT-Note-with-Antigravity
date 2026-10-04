@@ -1,10 +1,10 @@
+import { copyNote } from "@/lib/copyNote";
 import { flushEditor } from "@/lib/editorDraft";
 import type { ImportResult } from "@/lib/backupExchange";
 import { create } from "zustand";
 import { type NoteData } from "@/types";
 import * as ds from "@/lib/localDataService"; // 로컬 전환용
 import { useAuthStore } from "./useAuthStore";
-import { todayLocalISO } from "@/lib/localDate";
 
 interface NoteStore {
   notes: NoteData[];
@@ -15,7 +15,7 @@ interface NoteStore {
 
   selectNote: (id: string | null) => Promise<void>;
   createNewNote: () => void;
-  duplicateNote: (id: string) => void;
+  duplicateNote: (id: string, otherPatient?: boolean) => void;
   clearPendingDuplicate: () => void;
   refreshNotes: () => Promise<void>;
   saveNote: (data: Omit<NoteData, "id" | "savedAt">, existingId?: string | null) => Promise<NoteData>;
@@ -51,32 +51,11 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
   },
   createNewNote: () => { set({ pendingDuplicate: null }); get().selectNote(null); },
 
-  duplicateNote: async (id) => {
+  duplicateNote: async (id, otherPatient = false) => {
     try { await flushEditor(); } catch (err) { set({ error: (err as Error).message }); return; }
     const note = get().notes.find((n) => n.id === id);
     if (!note) return;
-    // 임상 데이터는 유지하고 작성일/담당 치료사만 초기화
-    const duplicated: Omit<NoteData, "id" | "savedAt"> = {
-      patientId: note.patientId, // 같은 환자의 후속 기록이므로 유지
-      patientName: note.patientName,
-      chartNo: note.chartNo,
-      birthDate: note.birthDate,
-      gender: note.gender,
-      diagnosis: note.diagnosis,
-      pmh: note.pmh,
-      painScore: note.painScore,
-      painAreas: (note.painAreas ?? []).map((e) => ({ ...e })),
-      chiefComplaint: note.chiefComplaint,
-      rom: note.rom?.map((r) => ({ ...r })) || [],
-      postural: note.postural,
-      palpation: note.palpation,
-      specialTest: note.specialTest,
-      treatment: note.treatment,
-      homeExercise: note.homeExercise,
-      noteDate: todayLocalISO(),
-      therapist: null,
-      therapistUid: "",
-    };
+    const duplicated = copyNote(note, otherPatient);
     set({ selectedNoteId: null, pendingDuplicate: duplicated });
   },
 

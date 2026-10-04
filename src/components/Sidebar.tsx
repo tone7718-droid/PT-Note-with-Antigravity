@@ -371,11 +371,12 @@ export default function Sidebar() {
                     >
                       <TrendingUp size={15} />
                     </button>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); duplicateNote(note.id!, true); }} className="p-1.5 rounded-lg text-xs hover:bg-gray-200 dark:hover:bg-gray-700" title="환자 식별정보와 통증 점수·부위를 비우고 임상 내용을 복사합니다. 확인 후 저장하세요.">다른 환자용 복사</button>
                     <button
                       onClick={(e) => { e.stopPropagation(); duplicateNote(note.id!); }}
                       className="shrink-0 p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                       aria-label={`${note.patientName} 노트 복사`}
-                      title="이 노트를 복사하여 새 노트 작성"
+                      title="같은 환자의 다음 기록: 임상 내용 전체 복사 후 확인하여 저장"
                     >
                       <Copy size={15} />
                     </button>
