@@ -103,3 +103,9 @@ it("Antigravity store duplication retains assessment, plan and post-treatment pa
   await useNoteStore.getState().duplicateNote("source");
   expect(useNoteStore.getState().pendingDuplicate).toMatchObject({ assessment: "평가", plan: "계획", painScoreAfter: 3 });
 });
+
+it("retains an imported patient group when later sessions omit the chart number", async () => {
+  const local = await ds.upsertNote(n("local", { chartNo: "A", birthDate: "1980-01-01" }));
+  await ds.importCompatibleBackup(JSON.stringify({ notes: [n("first", { chartNo: "A", patientId: "foreign-patient", birthDate: "1980-01-01" }), n("second", { chartNo: "", patientId: "foreign-patient", birthDate: "1980-01-01" })] }));
+  expect((await ds.fetchNotes()).filter(x => ["first", "second"].includes(x.id ?? "")).every(x => x.patientId === local.patientId)).toBe(true);
+});
