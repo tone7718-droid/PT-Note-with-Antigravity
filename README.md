@@ -30,6 +30,8 @@ npm run test:e2e       # Playwright E2E 테스트 (dev 서버 자동 기동)
 
 현재 **로컬 모드**(`src/lib/localDataService.ts`)로 동작합니다. 기록·초안·이력은 AES-GCM으로 암호화하여 localStorage에 저장하고, 세션은 sessionStorage에 저장합니다. 계정은 PBKDF2 비밀번호 해시로 관리합니다.
 
+암호화 키는 Electron 데스크톱 앱에서 OS 보안 저장소(safeStorage — Windows DPAPI / macOS Keychain)로 보호해 사용자 데이터 폴더에 보관하며, 구버전이 localStorage 에 두었던 키는 최초 실행 시 자동 이관됩니다. 웹 브라우저판은 구조적 대안이 없어 키가 localStorage 에 남으므로, 브라우저 프로필에 접근할 수 있는 사람으로부터는 보호하지 못합니다(로그인 화면에 안내 표시).
+
 클라우드 전환은 import 경로만 바꾸는 방식으로 지원하지 않습니다. 병원 공동 사용에 필요한 중앙 인증·병원별 서버 권한·DB·감사 이력은 별도로 구현해야 합니다.
 
 ## 보안 및 백업

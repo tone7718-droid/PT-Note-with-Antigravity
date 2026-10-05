@@ -223,7 +223,7 @@ export default function ProgressNoteForm() {
       <form onSubmit={handleSubmit(onSaveSubmit, onInvalid)}>
         <fieldset disabled={isSaving}>
         {(saveError || storageError) && <p role="alert" className="p-3 text-sm font-bold text-red-600">{saveError || storageError}</p>}
-        <div className="max-w-5xl mx-auto px-3 sm:px-10 py-6 sm:py-10 bg-gray-50/30 dark:bg-gray-900 min-h-full pb-48 scroll-smooth print:bg-white print:p-0 print:m-0 print:pb-0">
+        <div className="max-w-5xl mx-auto px-3 sm:px-10 py-6 sm:py-10 bg-gray-50/30 dark:bg-gray-900 min-h-full pb-12 scroll-smooth print:bg-white print:p-0 print:m-0 print:pb-0">
           <div className="w-full h-full">
 
             {/* 타이틀 & 버튼 */}
@@ -303,14 +303,14 @@ export default function ProgressNoteForm() {
         </div>
 
         {/* ── 고정 저장 & 모바일 PDF 버튼 ── */}
-        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-8 sm:right-8 z-50 flex items-center justify-end gap-2 print:hidden">
-          <button type="button" onClick={() => setShowMacroModal(true)} className="sm:hidden flex items-center justify-center px-4 py-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-bold text-base rounded-2xl shadow-lg transition-all focus:outline-none focus:ring-4 focus:ring-amber-300">
-            ⚡
+        <div className="sticky bottom-0 z-40 flex items-center justify-end gap-2 px-4 sm:px-8 py-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-t border-gray-200 dark:border-gray-800 print:hidden">
+          <button type="button" onClick={() => setShowMacroModal(true)} className="sm:hidden flex items-center justify-center px-3 py-4 whitespace-nowrap bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-bold text-base rounded-2xl shadow-lg transition-all focus:outline-none focus:ring-4 focus:ring-amber-300" aria-label="매크로 문구 등록">
+            ⚡ 매크로
           </button>
-          <button type="button" onClick={handlePrint} className="flex-1 sm:hidden flex items-center justify-center gap-2 px-5 py-4 bg-gray-800 hover:bg-gray-900 active:bg-black text-white font-bold text-lg rounded-2xl shadow-lg transition-all focus:outline-none focus:ring-4 focus:ring-gray-300">
+          <button type="button" onClick={handlePrint} className="flex-1 sm:hidden flex items-center justify-center gap-2 px-3 py-4 whitespace-nowrap bg-gray-800 hover:bg-gray-900 active:bg-black text-white font-bold text-lg rounded-2xl shadow-lg transition-all focus:outline-none focus:ring-4 focus:ring-gray-300">
             📄 PDF
           </button>
-          <button type="submit" disabled={isSaving} className="flex-[2] sm:flex-none flex items-center justify-center gap-2 sm:gap-3 px-6 sm:px-8 py-4 bg-gray-900 hover:bg-gray-800 active:bg-black disabled:bg-gray-400 text-white dark:bg-gray-100 dark:hover:bg-white dark:active:bg-white dark:disabled:bg-gray-600 dark:text-gray-900 font-extrabold text-lg sm:text-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-gray-900/50 dark:focus:ring-gray-100/40 transform sm:hover:-translate-y-2 select-none">
+          <button type="submit" disabled={isSaving} className="flex-[2] sm:flex-none flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-8 py-4 whitespace-nowrap bg-gray-900 hover:bg-gray-800 active:bg-black disabled:bg-gray-400 text-white dark:bg-gray-100 dark:hover:bg-white dark:active:bg-white dark:disabled:bg-gray-600 dark:text-gray-900 font-extrabold text-lg sm:text-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-gray-900/50 dark:focus:ring-gray-100/40 transform sm:hover:-translate-y-2 select-none">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-7 sm:w-7" viewBox="0 0 20 20" fill="currentColor">
               <path d="M17 3H5a2 2 0 00-2 2v10a2 2 0 002 2h10l4-4V5a2 2 0 00-2-2zm-5 12H7v-4h5v4zm4-6H4V5h12v4z" />
             </svg>

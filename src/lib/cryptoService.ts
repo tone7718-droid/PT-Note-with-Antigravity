@@ -1,19 +1,41 @@
 import { withBrowserLock } from "@/lib/storageLock";
-/* ── AES-GCM localStorage 암호화 서비스 ──
+/* ── AES-GCM 암호화 서비스 ──
  *
- * 랜덤 256-bit 키를 최초 실행 시 생성해 별도 localStorage 슬롯에 보관.
+ * 랜덤 256-bit 키를 최초 실행 시 생성해 보관하고,
  * 환자 노트(pt_local_notes)를 암호화해 평문 노출을 방지.
  * 내보내기/가져오기는 localDataService에서 복호화 후 처리해 서식이 유지됨.
+ *
+ * 키 보관 위치:
+ *  - Electron 데스크톱: OS 보안 저장소(safeStorage — Windows DPAPI / macOS
+ *    Keychain / Linux Secret Service)로 암호화해 사용자 데이터 폴더에 보관.
+ *    기존 localStorage 키는 최초 실행 시 자동 이관.
+ *  - 웹: localStorage 폴백. 이 경우 키가 암호문과 같은 저장소라
+ *    기기(브라우저 프로필) 접근자에게는 보호가 되지 않음 (README 참고).
  */
-
-/* 한계: 키가 암호문과 같은 localStorage 에 저장되므로 기기(브라우저 프로필)
- * 접근자에게는 보호가 되지 않는다. 근본 해결은 Tauri(데스크톱)에서 OS 보안
- * 저장소(Windows DPAPI / macOS Keychain)에 키를 보관하는 것 — Rust 측
- * keyring 연동이 필요해 향후 과제 (README "Security Model" 참고). */
 const ENC_KEY_STORAGE = "pt_enc_key_v1";
 
 let _cachedKey: CryptoKey | null = null;
 let _cachedHex: string | null = null;
+
+type ElectronKeyApi = { getEncKey: () => Promise<string | null>; setEncKey: (value: string) => Promise<void> };
+function electronKeyApi(): ElectronKeyApi | null {
+  const api = (window as unknown as { electronAPI?: Partial<ElectronKeyApi> }).electronAPI;
+  return api?.getEncKey && api.setEncKey ? (api as ElectronKeyApi) : null;
+}
+async function loadStoredKeyHex(): Promise<string | null> {
+  const api = electronKeyApi();
+  if (!api) return window.localStorage.getItem(ENC_KEY_STORAGE);
+  const fromSecureStore = await api.getEncKey();
+  if (fromSecureStore) return fromSecureStore;
+  const legacy = window.localStorage.getItem(ENC_KEY_STORAGE);
+  if (legacy) { await api.setEncKey(legacy); window.localStorage.removeItem(ENC_KEY_STORAGE); }
+  return legacy;
+}
+async function persistKeyHex(hex: string): Promise<void> {
+  const api = electronKeyApi();
+  if (api) await api.setEncKey(hex);
+  else window.localStorage.setItem(ENC_KEY_STORAGE, hex);
+}
 
 function bufToHex(buf: Uint8Array<ArrayBuffer>): string {
   return Array.from(buf)
@@ -31,7 +53,7 @@ function hexToBuf(hex: string): Uint8Array<ArrayBuffer> {
 
 async function getKey(): Promise<CryptoKey> {
   return withBrowserLock("pt-note:key:v1", async () => {
-    const stored = window.localStorage.getItem(ENC_KEY_STORAGE);
+    const stored = await loadStoredKeyHex();
     if (stored) {
       if (!/^[0-9a-f]{64}$/i.test(stored)) throw new Error("암호화 키가 손상되었습니다.");
       if (_cachedKey && _cachedHex === stored) return _cachedKey;
@@ -45,7 +67,7 @@ async function getKey(): Promise<CryptoKey> {
     }
     const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
     const hex = bufToHex(new Uint8Array(await crypto.subtle.exportKey("raw", key)));
-    window.localStorage.setItem(ENC_KEY_STORAGE, hex);
+    await persistKeyHex(hex);
     _cachedKey = key; _cachedHex = hex; return key;
   });
 }

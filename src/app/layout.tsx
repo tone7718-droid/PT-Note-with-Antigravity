@@ -18,6 +18,8 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <head>
+        {/* Electron(file://)은 Vercel 응답 헤더를 받지 못하므로 같은 CSP 를 meta 로도 선언 */}
+        <meta httpEquiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'" />
         {/* hydration 전에 html.dark 미리 붙여 테마 FOUC 차단 */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
