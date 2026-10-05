@@ -15,7 +15,7 @@ import { hashPassword, verifyPassword, isLegacyHash } from "@/components/hashUti
 import { ANT_CENTER, ANT_PAIRED, POST_CENTER, POST_PAIRED } from "@/components/bodyDiagramShapes";
 import { decryptData, encryptWithPassphrase, decryptWithPassphrase } from "./cryptoService";
 import { snapshotBeforeDestructive, listBackups, type BackupSnapshot } from "./autoBackup";
-import { DEFAULT_PASSWORD } from "./passwordPolicy";
+import { DEFAULT_PASSWORD, validateNewPassword } from "./passwordPolicy";
 
 /* ── Storage Keys ── */
 const NOTES_KEY = "pt_local_notes";
@@ -85,7 +85,9 @@ async function isSetupRequiredUnlocked(): Promise<boolean> {
 }
 async function setupInitialMasterUnlocked(name: string, password: string): Promise<void> {
   if (!await isSetupRequiredUnlocked()) throw new Error("이미 관리자 계정이 설정되어 있습니다.");
-  if (!name.trim() || password.length < 8) throw new Error("관리자 이름과 8자 이상의 비밀번호를 입력해주세요.");
+  if (!name.trim()) throw new Error("관리자 이름을 입력해주세요.");
+  const policyError = validateNewPassword(password);
+  if (policyError) throw new Error(policyError);
   hospitalId();
   write(THERAPISTS_KEY, [{ uid: "master-default", id: "master", name: name.trim(), role: "master", resigned: false, passwordHash: await hashPassword(password) }]);
 }
@@ -438,7 +440,8 @@ async function createTherapistViaEdgeFunctionUnlocked(
     throw new Error("이미 사용 중인 ID입니다.");
   }
 
-  if (password.length < 8) throw new Error("비밀번호는 8자 이상이어야 합니다.");
+  const policyError = validateNewPassword(password);
+  if (policyError) throw new Error(policyError);
   const passwordHash = await hashPassword(password);
   const newRecord: TherapistRecord = {
     uid: `therapist-${crypto.randomUUID()}`,
@@ -486,7 +489,8 @@ async function updateTherapistPasswordViaAuthUnlocked(
   if (!session) throw new Error("로그인 세션이 없습니다.");
 
   const therapists = read<TherapistRecord[]>(THERAPISTS_KEY, []);
-  if (newPassword.length < 8) throw new Error("비밀번호는 8자 이상이어야 합니다.");
+  const policyError = validateNewPassword(newPassword);
+  if (policyError) throw new Error(policyError);
   const passwordHash = await hashPassword(newPassword);
   write(
     THERAPISTS_KEY,
@@ -510,7 +514,8 @@ async function resetTherapistPasswordDbUnlocked(
   if (!therapists.some((t) => t.uid === uid)) {
     throw new Error("해당 치료사를 찾을 수 없습니다.");
   }
-  if (newPassword.length < 8) throw new Error("비밀번호는 8자 이상이어야 합니다.");
+  const policyError = validateNewPassword(newPassword);
+  if (policyError) throw new Error(policyError);
   const passwordHash = await hashPassword(newPassword);
   write(
     THERAPISTS_KEY,
