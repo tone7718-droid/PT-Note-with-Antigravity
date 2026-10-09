@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import Module, { createRequire } from "node:module";
 import { mkdtempSync } from "node:fs";
